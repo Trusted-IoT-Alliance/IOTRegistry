@@ -17,12 +17,11 @@ import (
 
 	"errors"
 
-	"github.com/btcd/btcec"
-	"github.com/hyperledger/fabric/core/chaincode/shim"
-	"github.com/skuchain/iotregistry/IOTRegistryStore"
-	// txcache "github.com/skuchain/TuxedoPops/TXCache"
+	"github.com/btcsuite/btcd/btcec"
 	proto "github.com/golang/protobuf/proto"
-	IOTRegistryTX "github.com/skuchain/iotregistry/IOTRegistryTX"
+	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/skuchain/IOTRegistry/IOTRegistryStore"
+	IOTRegistryTX "github.com/skuchain/IOTRegistry/IOTRegistryTX"
 )
 
 // This chaincode implements the ledger operations for the proofchaincode
