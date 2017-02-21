@@ -10,13 +10,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"crypto/sha256"
 
 	"errors"
 
+	"github.com/btcd/btcec"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/skuchain/iotregistry/IOTRegistryStore"
+	// txcache "github.com/skuchain/TuxedoPops/TXCache"
+	proto "github.com/golang/protobuf/proto"
+	IOTRegistryTX "github.com/skuchain/iotregistry/IOTRegistryTX"
 )
 
 // This chaincode implements the ledger operations for the proofchaincode
@@ -26,6 +32,7 @@ type IOTRegistry struct {
 }
 
 func (t *IOTRegistry) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	fmt.Printf("entering INIT\n")
 	if len(args) < 1 {
 		fmt.Printf("Invalid Init Arg")
 		return nil, errors.New("Invalid Init Arg")
@@ -43,38 +50,154 @@ func (t *IOTRegistry) Init(stub shim.ChaincodeStubInterface, function string, ar
 	return nil, nil
 }
 
+// func (p *Pop) CreateOutput(amount int, assetType string, data string, creatorKeyBytes []byte, creatorSig []byte) error {
+// 	//uncertain where does creatorKeyBytes is public key in bytes
+
+// //need pubkey in bytes, signature in bytes, message string
+// 	//deserialize public key bytes into a public key object
+// 	creatorKey, err := btcec.ParsePubKey(creatorKeyBytes, btcec.S256())
+
+// 	if err != nil {
+// 		return fmt.Errorf("Invalid Creator key")
+// 	}
+// 	//DER is a standard for serialization
+// 	//parsing DER signature from bitcoin curve into a signature object
+// 	signature, err := btcec.ParseDERSignature(creatorSig, btcec.S256())
+// 	if err != nil {
+// 		fmt.Printf("Bad Creator signature encoding %+v", p)
+// 		return fmt.Errorf("Bad Creator signature encoding %+v", p)
+// 	}
+// 	//FIXME add Value to the signature
+// 	message := hex.EncodeToString(p.Counter) + ":" + p.Address + ":" + strconv.FormatInt(int64(amount), 10) + ":" + assetType + ":" + data
+
+// 	//here we're using the Sum256 hash. I don't remember the distinction from the normal one.
+// 	messageBytes := sha256.Sum256([]byte(message))
+
+// 	//try to verify the signature (most likely failure is that the wrong thing has been signed (maybe the counterseed changed or the message you signed and the message you verified are not the same))
+// 	success := signature.Verify(messageBytes[:], creatorKey)
+// 	if !success {
+// 		fmt.Printf("Invalid Creator Signature %+v", p)
+// 		return fmt.Errorf("Invalid Creator Signature %+v", p)
+// 	}
+
+// 	output := OTX.New(creatorKey, amount, assetType, data, p.Counter)
+
+// 	p.Outputs = append(p.Outputs, *output)
+// 	newCounter := sha256.Sum256(p.Counter)
+// 	p.Counter = newCounter[:]
+// 	return nil
+// }
+
 func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	// if len(args) == 0 {
-	// 	fmt.Println("Insufficient arguments found")
-	// 	return nil, errors.New("Insufficient arguments found")
-	// }
 
-	// argsBytes, err := hex.DecodeString(args[0])
-	// if err != nil {
-	// 	fmt.Println("Invalid argument expected hex")
-	// 	return nil, errors.New("Invalid argument expected hex")
-	// }
+	if len(args) == 0 {
+		fmt.Println("Insufficient arguments found")
+		return nil, errors.New("Insufficient arguments found")
+	}
 
-	// counterseed, err := stub.GetState("CounterSeed")
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return nil, err
-	// }
-	// txCache := txcache.TXCache{}
-	// txCacheBytes, err := stub.GetState("TxCache")
+	argsBytes, err := hex.DecodeString(args[0])
+	if err != nil {
+		fmt.Println("Invalid argument expected hex")
+		return nil, errors.New("Invalid argument expected hex")
+	}
 
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return nil, err
-	// }
+	switch function {
+	case "registerName":
+		//declare and initialize RegisterIdentity struct
+		registerNameArgs := IOTRegistryTX.RegisterIdentityTx{}
+		err = proto.Unmarshal(argsBytes, &registerNameArgs)
+		if err != nil {
+			fmt.Printf("Invalid argument expected RegisterNameTX protocol buffer %s", err.Error())
+		}
 
-	// if len(txCacheBytes) > 0 {
-	// 	proto.Unmarshal(txCacheBytes, &txCache)
-	// } else {
-	// 	txCache.Cache = make(map[string]bool)
-	// }
+		//check if name is available
+		registerNameBytes, err := stub.GetState("Name: " + registerNameArgs.Name)
+		if err != nil {
+			fmt.Println("Could not get Name State")
+			return nil, errors.New("Could not get Name State")
+		}
 
-	// switch function {
+		//if name unavailable
+		if len(registerNameBytes) != 0 {
+			fmt.Println("Name is unavailable")
+			return nil, errors.New("Name is unavailable")
+		}
+
+		//given that name is available, we need to verify the signature by using the public key to decrypt the signature
+		creatorKeyBytes := registerNameArgs.PubKey
+
+		//deserialize public key bytes into a public key object
+		creatorKey, err := btcec.ParsePubKey(creatorKeyBytes, btcec.S256())
+
+		if err != nil {
+			return nil, fmt.Errorf("Invalid Creator key")
+		}
+
+		creatorSig := registerNameArgs.Signature
+		//DER is a standard for serialization
+		//parsing DER signature from bitcoin curve into a signature object
+		signature, err := btcec.ParseDERSignature(creatorSig, btcec.S256())
+		if err != nil {
+			fmt.Printf("Bad Creator signature encoding %+v", registerNameArgs)
+			return nil, fmt.Errorf("Bad Creator signature encoding %+v", registerNameArgs)
+		}
+		message := registerNameArgs.Name + ":" + registerNameArgs.Data
+
+		//here we're using the Sum256 hash. I don't remember the distinction from the normal one.
+		messageBytes := sha256.Sum256([]byte(message))
+
+		//try to verify the signature
+		success := signature.Verify(messageBytes[:], creatorKey)
+		if !success {
+			fmt.Printf("Invalid Creator Signature %+v", registerNameArgs)
+			return nil, fmt.Errorf("Invalid Creator Signature %+v", registerNameArgs)
+		}
+
+		//marshall into store type. Then put that variable into the state
+		store := IOTRegistryStore.Identities{}
+		store.OwnerName = registerNameArgs.Name
+		store.Pubkey = registerNameArgs.PubKey
+
+		storeBytes, err := proto.Marshal(&store)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		err = stub.PutState("IdentityName: "+registerNameArgs.Name, storeBytes)
+		if err != nil {
+			fmt.Printf(err.Error())
+			return nil, err
+		}
+
+		// case "registerThing":
+		// 	registerThingArgs := IOTRegistryTX.RegisterIdentityTx{}
+		// 	err = proto.Unmarshal(argsBytes, &registerThingArgs)
+		// 	if err != nil {
+		// 		fmt.Printf("Invalid argument expected RegisterThingTX protocol buffer %s", err.Error())
+		// 	}
+
+		// 	//check if name is available
+		// 	registerThingBytes, err := stub.GetState("Name: " + registerThingArgs.Nonce)
+		// 	if err != nil {
+		// 		fmt.Println("Could not get Nonce State")
+		// 		return nil, errors.New("Could not get Nonce State")
+		// 	}
+
+		// 	//if name unavailable
+		// 	if len(registerThingBytes) != 0 {
+		// 		fmt.Println("Nonce is unavailable")
+		// 		return nil, errors.New("Nonce is unavailable")
+		// 	}
+
+		// 	//check if owner is valid id
+		// 		//where is owner? Don't see a name in
+
+	}
+
+	// change from argument transaction store into
+	//new object of store protobuff type
+	//
+
 	// case "create":
 	// 	createArgs := TuxedoPopsTX.CreateTX{}
 	// 	err = proto.Unmarshal(argsBytes, &createArgs)
