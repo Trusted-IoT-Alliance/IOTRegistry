@@ -24,9 +24,9 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 type RegisterThingTX struct {
-	Nonce      string   `protobuf:"bytes,1,opt,name=Nonce" json:"Nonce,omitempty"`
+	Nonce      []byte   `protobuf:"bytes,1,opt,name=Nonce,proto3" json:"Nonce,omitempty"`
 	Identities []string `protobuf:"bytes,2,rep,name=Identities" json:"Identities,omitempty"`
-	PubKey     []byte   `protobuf:"bytes,3,opt,name=PubKey,proto3" json:"PubKey,omitempty"`
+	OwnerName  string   `protobuf:"bytes,3,opt,name=OwnerName" json:"OwnerName,omitempty"`
 	Signature  []byte   `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
 }
 
@@ -35,7 +35,7 @@ func (m *RegisterThingTX) String() string { return proto.CompactTextString(m) }
 func (*RegisterThingTX) ProtoMessage()    {}
 
 type RegisterIdentityTx struct {
-	Name      string `protobuf:"bytes,1,opt,name=Name" json:"Name,omitempty"`
+	OwnerName string `protobuf:"bytes,1,opt,name=OwnerName" json:"OwnerName,omitempty"`
 	PubKey    []byte `protobuf:"bytes,2,opt,name=PubKey,proto3" json:"PubKey,omitempty"`
 	Data      string `protobuf:"bytes,3,opt,name=Data" json:"Data,omitempty"`
 	Signature []byte `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`

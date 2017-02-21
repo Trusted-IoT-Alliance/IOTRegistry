@@ -9,7 +9,7 @@ message RegisterThingTX {
 }
 
 message RegisterIdentityTx{
-    string OwnderName =1;
+    string OwnerName =1;
     bytes PubKey =2;
     string Data = 3;
     bytes Signature =4;

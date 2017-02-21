@@ -136,7 +136,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//check if name is available
-		registerNameBytes, err := stub.GetState("Name: " + registerNameArgs.Name)
+		registerNameBytes, err := stub.GetState("Name: " + registerNameArgs.OwnerName)
 		if err != nil {
 			fmt.Println("Could not get Name State")
 			return nil, errors.New("Could not get Name State")
@@ -152,7 +152,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 		creatorSig := registerNameArgs.Signature
 
-		message := registerNameArgs.Name + ":" + registerNameArgs.Data
+		message := registerNameArgs.OwnerName + ":" + registerNameArgs.Data
 
 		success, err := verify(creatorKeyBytes, creatorSig, message)
 		if err != nil {
@@ -161,7 +161,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 		//marshall into store type. Then put that variable into the state
 		store := IOTRegistryStore.Identities{}
-		store.OwnerName = registerNameArgs.Name
+		store.OwnerName = registerNameArgs.OwnerName
 		store.Pubkey = registerNameArgs.PubKey
 
 		storeBytes, err := proto.Marshal(&store)
@@ -169,7 +169,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			fmt.Println(err)
 		}
 
-		err = stub.PutState("IdentityName: "+registerNameArgs.Name, storeBytes)
+		err = stub.PutState("IdentityName: "+registerNameArgs.OwnerName, storeBytes)
 		if err != nil {
 			fmt.Printf(err.Error())
 			return nil, err
@@ -183,7 +183,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//check if nonce already exists
-		nonceCheckBytes, err := stub.GetState("Nonce: " + registerThingArgs.Nonce)
+		nonceCheckBytes, err := stub.GetState("Nonce: " + hex.EncodeToString(registerThingArgs.Nonce))
 		if err != nil {
 			fmt.Println("Could not get Nonce State")
 			return nil, errors.New("Could not get Nonce State")
@@ -220,7 +220,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			}
 		}
 
-		creatorKeyBytes := registerThingArgs.PubKey
+		creatorKeyBytes := registerThingArgs.OwnerName
 
 		creatorSig := registerThingArgs.Signature
 
