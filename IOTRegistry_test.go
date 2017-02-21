@@ -205,6 +205,14 @@ import (
 // 	// combineArgs.CreatorSig =
 // }
 
+func (stub *MockStub) MockInvoke(uuid string, function string, args []string) ([]byte, error) {
+	stub.args = getBytes(function, args)
+	stub.MockTransactionStart(uuid)
+	bytes, err := stub.cc.Invoke(stub, function, args)
+	stub.MockTransactionEnd(uuid)
+	return bytes, err
+}
+
 func checkInit(t *testing.T, stub *shim.MockStub, args []string) {
 	_, err := stub.MockInit("1", "", args)
 	if err != nil {
@@ -217,8 +225,8 @@ func TestPopcodeChaincode(t *testing.T) {
 	bst := new(IOTRegistry)
 
 	stub := shim.NewMockStub("IOTRegistry", bst)
-	checkInit(t, stub, []string{"Hello World"})
-
+	// checkInit(t, stub, []string{"Hello World"})
+	MockInvoke("1", "registerName", {"02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc"})
 	// bst := new(IOTRegistry)
 	// stub := shim.NewMockStub("tuxedoPops", bst)
 	// checkInit(t, stub, []string{"Hello World"})
