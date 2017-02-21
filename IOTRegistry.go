@@ -87,6 +87,32 @@ func (t *IOTRegistry) Init(stub shim.ChaincodeStubInterface, function string, ar
 // 	return nil
 // }
 
+func verify(pubKeyBytes []byte, sigBytes []byte, message string) (success bool, err error) {
+	//deserialize public key bytes into a public key object
+	creatorKey, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+	if err != nil {
+		return false, fmt.Errorf("Invalid Creator key")
+	}
+
+	//DER is a standard for serialization
+	//parsing DER signature from bitcoin curve into a signature object
+	signature, err := btcec.ParseDERSignature(sigBytes, btcec.S256())
+	if err != nil {
+		fmt.Printf("Bad Creator signature encoding")
+		return false, fmt.Errorf("Bad Creator signature encoding")
+	}
+
+	messageBytes := sha256.Sum256([]byte(message))
+
+	//try to verify the signature
+	success = signature.Verify(messageBytes[:], creatorKey)
+	if !success {
+		fmt.Printf("Invalid Creator Signature")
+		return false, fmt.Errorf("Invalid Creator Signature")
+	}
+	return success, nil
+}
+
 func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 
 	if len(args) == 0 {
@@ -122,34 +148,15 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			return nil, errors.New("Name is unavailable")
 		}
 
-		//given that name is available, we need to verify the signature by using the public key to decrypt the signature
 		creatorKeyBytes := registerNameArgs.PubKey
 
-		//deserialize public key bytes into a public key object
-		creatorKey, err := btcec.ParsePubKey(creatorKeyBytes, btcec.S256())
-
-		if err != nil {
-			return nil, fmt.Errorf("Invalid Creator key")
-		}
-
 		creatorSig := registerNameArgs.Signature
-		//DER is a standard for serialization
-		//parsing DER signature from bitcoin curve into a signature object
-		signature, err := btcec.ParseDERSignature(creatorSig, btcec.S256())
-		if err != nil {
-			fmt.Printf("Bad Creator signature encoding %+v", registerNameArgs)
-			return nil, fmt.Errorf("Bad Creator signature encoding %+v", registerNameArgs)
-		}
+
 		message := registerNameArgs.Name + ":" + registerNameArgs.Data
 
-		//here we're using the Sum256 hash. I don't remember the distinction from the normal one.
-		messageBytes := sha256.Sum256([]byte(message))
-
-		//try to verify the signature
-		success := signature.Verify(messageBytes[:], creatorKey)
-		if !success {
-			fmt.Printf("Invalid Creator Signature %+v", registerNameArgs)
-			return nil, fmt.Errorf("Invalid Creator Signature %+v", registerNameArgs)
+		success, err := verify(creatorKeyBytes, creatorSig, message)
+		if err != nil {
+			return nil, errors.New("Error verifying signature")
 		}
 
 		//marshall into store type. Then put that variable into the state
@@ -168,29 +175,82 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			return nil, err
 		}
 
-		// case "registerThing":
-		// 	registerThingArgs := IOTRegistryTX.RegisterIdentityTx{}
-		// 	err = proto.Unmarshal(argsBytes, &registerThingArgs)
-		// 	if err != nil {
-		// 		fmt.Printf("Invalid argument expected RegisterThingTX protocol buffer %s", err.Error())
-		// 	}
+	case "registerThing":
+		registerThingArgs := IOTRegistryTX.RegisterThingTX{}
+		err = proto.Unmarshal(argsBytes, &registerThingArgs)
+		if err != nil {
+			fmt.Printf("Invalid argument expected RegisterThingTX protocol buffer %s", err.Error())
+		}
 
-		// 	//check if name is available
-		// 	registerThingBytes, err := stub.GetState("Name: " + registerThingArgs.Nonce)
-		// 	if err != nil {
-		// 		fmt.Println("Could not get Nonce State")
-		// 		return nil, errors.New("Could not get Nonce State")
-		// 	}
+		//check if nonce already exists
+		nonceCheckBytes, err := stub.GetState("Nonce: " + registerThingArgs.Nonce)
+		if err != nil {
+			fmt.Println("Could not get Nonce State")
+			return nil, errors.New("Could not get Nonce State")
+		}
 
-		// 	//if name unavailable
-		// 	if len(registerThingBytes) != 0 {
-		// 		fmt.Println("Nonce is unavailable")
-		// 		return nil, errors.New("Nonce is unavailable")
-		// 	}
+		//if nonce exists
+		if len(nonceCheckBytes) != 0 {
+			fmt.Println("Nonce is unavailable")
+			return nil, errors.New("Nonce is unavailable")
+		}
 
-		// 	//check if owner is valid id
-		// 		//where is owner? Don't see a name in
+		//check if owner is valid id (name exists in registry)
+		validIDCheckBytes, err := stub.GetState("Name: " + registerThingArgs.OwnerName)
+		//looks like OwnerName defined in .proto but not in pb.go
+		if err != nil {
+			fmt.Println("Could not get OwnerName State")
+			return nil, errors.New("Could not get OwnerName State")
+		}
 
+		if len(validIDCheckBytes) == 0 {
+			fmt.Println("OwnerName is not in registry")
+			return nil, errors.New("OwnerName is not in registry")
+		}
+
+		for _, identity := range registerThingArgs.Identities {
+			aliasCheckBytes, err := stub.GetState("Name: " + identity)
+			if err != nil {
+				fmt.Printf("Could not get identity: (%s) State", identity)
+				return nil, errors.New("Could not get Identity State")
+			}
+			if len(aliasCheckBytes) != 0 {
+				fmt.Printf("Identity: (%s) is already in registry", identity)
+				return nil, errors.New("OwnerName is not in registry")
+			}
+		}
+
+		creatorKeyBytes := registerThingArgs.PubKey
+
+		creatorSig := registerThingArgs.Signature
+
+		message := registerThingArgs.OwnerName
+		for _, identity := range registerThingArgs.Identities {
+			message += ":" + identity
+		}
+
+		success, err := verify(creatorKeyBytes, creatorSig, message)
+		if err != nil {
+			return nil, errors.New("Error verifying signature")
+		}
+
+		for _, identity := range registerThingArgs.Identities {
+			store := IOTRegistryStore.Things{}
+			store.Alias = identity
+			store.OwnerName = registerThingArgs.OwnerName
+			store.Data = registerThingArgs.Data
+
+			storeBytes, err := proto.Marshal(&store)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			err = stub.PutState("IdentityName: "+identity, storeBytes)
+			if err != nil {
+				fmt.Printf(err.Error())
+				return nil, err
+			}
+		}
 	}
 
 	// change from argument transaction store into
