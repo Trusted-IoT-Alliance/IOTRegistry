@@ -1,0 +1,17 @@
+
+syntax ="proto3";
+
+message RegisterThingTX {
+    bytes Nonce =1;
+    repeated string Identities =2;
+     string OwnerName =3;
+    bytes Signature =4;
+}
+
+message RegisterIdentityTx{
+    string OwnderName =1;
+    bytes PubKey =2;
+    string Data = 3;
+    bytes Signature =4;
+
+}
