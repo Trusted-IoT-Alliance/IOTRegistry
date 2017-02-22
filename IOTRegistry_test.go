@@ -10,7 +10,7 @@ import (
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 
 	"github.com/btcsuite/btcd/btcec"
-	// IOTRegistry "github.com/skuchain/IOTRegistry/IOTRegistryTX"
+	IOTRegistryTX "github.com/skuchain/IOTRegistry/IOTRegistryTX"
 )
 
 // Notes from Testing popcode
@@ -227,6 +227,14 @@ func checkInit(t *testing.T, stub *shim.MockStub, args []string) {
 	}
 }
 
+type RegisterThingTX struct {
+	Nonce      []byte   `protobuf:"bytes,1,opt,name=Nonce,proto3" json:"Nonce,omitempty"`
+	Identities []string `protobuf:"bytes,2,rep,name=Identities" json:"Identities,omitempty"`
+	OwnerName  string   `protobuf:"bytes,3,opt,name=OwnerName" json:"OwnerName,omitempty"`
+	Signature  []byte   `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
+	Data       string   `protobuf:"bytes,5,opt,name=Data" json:"Data,omitempty"`
+}
+
 func TestPopcodeChaincode(t *testing.T) {
 	bst := new(IOTRegistry)
 
@@ -236,29 +244,44 @@ func TestPopcodeChaincode(t *testing.T) {
 	// bst := new(IOTRegistry)
 	// stub := shim.NewMockStub("tuxedoPops", bst)
 
-	registerName := IOTRegistryTX.RegisterNameTX{}
+	registerName := IOTRegistryTX.RegisterIdentityTX{}
 	// registerNameArgs.Address = "74ded2036e988fc56e3cff77a40c58239591e921"
-	registerNameArgs.OwnerName = "Alice"
+	registerName.OwnerName = "Alice"
 	pubKeyBytes, err := hex.DecodeString("02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc")
 	if err != nil {
 		fmt.Println(err)
 	}
-	registerNameArgs.PubKey = pubKeyBytes
-	registerNameArgs.Data = "Test Data"
+	registerName.PubKey = pubKeyBytes
+	registerName.Data = "Test Data"
 
 	privKeyString := "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20"
-	hexOwnerSig := generateRegisterNameSig(registerNameArgs.OwnerName, registerNameArgs.Data, privKeyString)
+	hexOwnerSig := generateRegisterNameSig(registerName.OwnerName, registerName.Data, privKeyString)
 
-	registerNameArgs.signature, err = hex.DecodeString(hexOwnerSig)
+	registerName.Signature, err = hex.DecodeString(hexOwnerSig)
 	if err != nil {
 		fmt.Println(err)
 	}
-	registerNameArgBytes, err := proto.Marshal(&registerNameArgs)
-	registerNameArgBytesStr := hex.EncodeToString(registerNameArgBytes)
-	_, err = stub.MockInvoke("3", "registerName", []string{registerNameArgBytesStr})
+	registerNameBytes, err := proto.Marshal(&registerName)
+	registerNameBytesStr := hex.EncodeToString(registerNameBytes)
+	_, err = stub.MockInvoke("3", "registerName", []string{registerNameBytesStr})
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	// registerThing := IOTRegistryTX.RegisterThingTX{}
+
+	// registerThing.Identities = []string
+
+	// fmt.Println(len(registerThing.Identities))
+	//json.marshal
+
+	/*define nonce
+	create Identities, a string, which must each exist on ledger
+	define OwnerName
+	define sig...require public and private key
+	define Data....not sure what will go in here
+	*/
+
 	// checkInit(t, stub, []string{"Hello World"})
 	// checkQuery(t, stub, "74ded2036e988fc56e3cff77a40c58239591e921", `{"Address":"74ded2036e988fc56e3cff77a40c58239591e921","Counter":"af5eef44907ccdcc33051d035f32f42de0d093fac2fd9d15923448f6af46bc43","Outputs":null}`)
 	// mint(t, stub, "af5eef44907ccdcc33051d035f32f42de0d093fac2fd9d15923448f6af46bc43")

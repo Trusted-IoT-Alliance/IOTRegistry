@@ -203,23 +203,27 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			return nil, errors.New("Could not get OwnerName State")
 		}
 
+		//if owner is not registered name
 		if len(checkIDBytes) == 0 {
 			fmt.Println("OwnerName is not in registry")
 			return nil, errors.New("OwnerName is not in registry")
 		}
 
+		//check if any identities exist
 		for _, identity := range registerThingArgs.Identities {
 			aliasCheckBytes, err := stub.GetState("Name: " + identity)
 			if err != nil {
 				fmt.Printf("Could not get identity: (%s) State", identity)
 				return nil, errors.New("Could not get Identity State")
 			}
+			//throw error if any of the identities already exist
 			if len(aliasCheckBytes) != 0 {
 				fmt.Printf("Identity: (%s) is already in registry", identity)
 				return nil, errors.New("OwnerName is not in registry")
 			}
 		}
 
+		//retrieve state associated with owner name to get public key
 		ownerIdentity := IOTRegistryStore.Identities{}
 		err = proto.Unmarshal(checkIDBytes, &ownerIdentity)
 		if err != nil {
@@ -240,6 +244,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			return nil, errors.New("Error verifying signature")
 		}
 
+		//this is where I'm not positive about what the logic is supposed to be.
 		for _, identity := range registerThingArgs.Identities {
 			//not sure what should go in alias.
 			identitySlice := make([]string, 1)
