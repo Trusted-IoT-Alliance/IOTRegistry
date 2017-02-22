@@ -1,10 +1,16 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"testing"
 
+	proto "github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+
+	"github.com/btcsuite/btcd/btcec"
+	// IOTRegistry "github.com/skuchain/IOTRegistry/IOTRegistryTX"
 )
 
 // Notes from Testing popcode
@@ -82,20 +88,6 @@ import (
 // 	if err != nil {
 // 		fmt.Println(err)
 // 	}
-// }
-
-// func generateCreateSig(CounterSeedStr string, amount int, assetType string, data string, addr string, privateKeyStr string) string {
-
-// 	privKeyByte, _ := hex.DecodeString(privateKeyStr)
-
-// 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
-
-// 	message := CounterSeedStr + ":" + addr + ":" + strconv.FormatInt(int64(amount), 10) + ":" + assetType + ":" + data
-// 	fmt.Println("Signed Message")
-// 	fmt.Println(message)
-// 	messageBytes := sha256.Sum256([]byte(message))
-// 	sig, _ := privKey.Sign(messageBytes[:])
-// 	return hex.EncodeToString(sig.Serialize())
 // }
 
 // func possess(t *testing.T, stub *shim.MockStub, counterSeed string, idx int) {
@@ -205,13 +197,27 @@ import (
 // 	// combineArgs.CreatorSig =
 // }
 
-func (stub *MockStub) MockInvoke(uuid string, function string, args []string) ([]byte, error) {
-	stub.args = getBytes(function, args)
-	stub.MockTransactionStart(uuid)
-	bytes, err := stub.cc.Invoke(stub, function, args)
-	stub.MockTransactionEnd(uuid)
-	return bytes, err
+func generateRegisterNameSig(name string, data string, privateKeyStr string) string {
+
+	privKeyByte, _ := hex.DecodeString(privateKeyStr)
+
+	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
+
+	message := name + ":" + data
+	fmt.Println("Signed Message")
+	fmt.Println(message)
+	messageBytes := sha256.Sum256([]byte(message))
+	sig, _ := privKey.Sign(messageBytes[:])
+	return hex.EncodeToString(sig.Serialize())
 }
+
+// func (stub *MockStub) MockInvoke(uuid string, function string, args []string) ([]byte, error) {
+// 	stub.args = getBytes(function, args)
+// 	stub.MockTransactionStart(uuid)
+// 	bytes, err := stub.cc.Invoke(stub, function, args)
+// 	stub.MockTransactionEnd(uuid)
+// 	return bytes, err
+// }
 
 func checkInit(t *testing.T, stub *shim.MockStub, args []string) {
 	_, err := stub.MockInit("1", "", args)
@@ -226,9 +232,33 @@ func TestPopcodeChaincode(t *testing.T) {
 
 	stub := shim.NewMockStub("IOTRegistry", bst)
 	// checkInit(t, stub, []string{"Hello World"})
-	MockInvoke("1", "registerName", {"02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc"})
+	// stub.MockInvoke("1", "registerName", "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc")
 	// bst := new(IOTRegistry)
 	// stub := shim.NewMockStub("tuxedoPops", bst)
+
+	registerName := IOTRegistryTX.RegisterNameTX{}
+	// registerNameArgs.Address = "74ded2036e988fc56e3cff77a40c58239591e921"
+	registerNameArgs.OwnerName = "Alice"
+	pubKeyBytes, err := hex.DecodeString("02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc")
+	if err != nil {
+		fmt.Println(err)
+	}
+	registerNameArgs.PubKey = pubKeyBytes
+	registerNameArgs.Data = "Test Data"
+
+	privKeyString := "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20"
+	hexOwnerSig := generateRegisterNameSig(registerNameArgs.OwnerName, registerNameArgs.Data, privKeyString)
+
+	registerNameArgs.signature, err = hex.DecodeString(hexOwnerSig)
+	if err != nil {
+		fmt.Println(err)
+	}
+	registerNameArgBytes, err := proto.Marshal(&registerNameArgs)
+	registerNameArgBytesStr := hex.EncodeToString(registerNameArgBytes)
+	_, err = stub.MockInvoke("3", "registerName", []string{registerNameArgBytesStr})
+	if err != nil {
+		fmt.Println(err)
+	}
 	// checkInit(t, stub, []string{"Hello World"})
 	// checkQuery(t, stub, "74ded2036e988fc56e3cff77a40c58239591e921", `{"Address":"74ded2036e988fc56e3cff77a40c58239591e921","Counter":"af5eef44907ccdcc33051d035f32f42de0d093fac2fd9d15923448f6af46bc43","Outputs":null}`)
 	// mint(t, stub, "af5eef44907ccdcc33051d035f32f42de0d093fac2fd9d15923448f6af46bc43")

@@ -4,11 +4,12 @@ syntax ="proto3";
 message RegisterThingTX {
     bytes Nonce =1;
     repeated string Identities =2;
-     string OwnerName =3;
+    string OwnerName =3;
     bytes Signature =4;
+    string Data =5;
 }
 
-message RegisterIdentityTx{
+message RegisterIdentityTX{
     string OwnerName =1;
     bytes PubKey =2;
     string Data = 3;

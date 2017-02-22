@@ -10,7 +10,7 @@ It is generated from these files:
 
 It has these top-level messages:
 	RegisterThingTX
-	RegisterIdentityTx
+	RegisterIdentityTX
 */
 package IOTRegistry
 
@@ -28,19 +28,20 @@ type RegisterThingTX struct {
 	Identities []string `protobuf:"bytes,2,rep,name=Identities" json:"Identities,omitempty"`
 	OwnerName  string   `protobuf:"bytes,3,opt,name=OwnerName" json:"OwnerName,omitempty"`
 	Signature  []byte   `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
+	Data       string   `protobuf:"bytes,5,opt,name=Data" json:"Data,omitempty"`
 }
 
 func (m *RegisterThingTX) Reset()         { *m = RegisterThingTX{} }
 func (m *RegisterThingTX) String() string { return proto.CompactTextString(m) }
 func (*RegisterThingTX) ProtoMessage()    {}
 
-type RegisterIdentityTx struct {
+type RegisterIdentityTX struct {
 	OwnerName string `protobuf:"bytes,1,opt,name=OwnerName" json:"OwnerName,omitempty"`
 	PubKey    []byte `protobuf:"bytes,2,opt,name=PubKey,proto3" json:"PubKey,omitempty"`
 	Data      string `protobuf:"bytes,3,opt,name=Data" json:"Data,omitempty"`
 	Signature []byte `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
 }
 
-func (m *RegisterIdentityTx) Reset()         { *m = RegisterIdentityTx{} }
-func (m *RegisterIdentityTx) String() string { return proto.CompactTextString(m) }
-func (*RegisterIdentityTx) ProtoMessage()    {}
+func (m *RegisterIdentityTX) Reset()         { *m = RegisterIdentityTX{} }
+func (m *RegisterIdentityTX) String() string { return proto.CompactTextString(m) }
+func (*RegisterIdentityTX) ProtoMessage()    {}

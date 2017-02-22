@@ -87,11 +87,11 @@ func (t *IOTRegistry) Init(stub shim.ChaincodeStubInterface, function string, ar
 // 	return nil
 // }
 
-func verify(pubKeyBytes []byte, sigBytes []byte, message string) (success bool, err error) {
+func verify(pubKeyBytes []byte, sigBytes []byte, message string) (err error) {
 	//deserialize public key bytes into a public key object
 	creatorKey, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
 	if err != nil {
-		return false, fmt.Errorf("Invalid Creator key")
+		return fmt.Errorf("Invalid Creator key")
 	}
 
 	//DER is a standard for serialization
@@ -99,18 +99,18 @@ func verify(pubKeyBytes []byte, sigBytes []byte, message string) (success bool, 
 	signature, err := btcec.ParseDERSignature(sigBytes, btcec.S256())
 	if err != nil {
 		fmt.Printf("Bad Creator signature encoding")
-		return false, fmt.Errorf("Bad Creator signature encoding")
+		return fmt.Errorf("Bad Creator signature encoding")
 	}
 
 	messageBytes := sha256.Sum256([]byte(message))
 
 	//try to verify the signature
-	success = signature.Verify(messageBytes[:], creatorKey)
+	success := signature.Verify(messageBytes[:], creatorKey)
 	if !success {
 		fmt.Printf("Invalid Creator Signature")
-		return false, fmt.Errorf("Invalid Creator Signature")
+		return fmt.Errorf("Invalid Creator Signature")
 	}
-	return success, nil
+	return nil
 }
 
 func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
@@ -129,7 +129,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 	switch function {
 	case "registerName":
 		//declare and initialize RegisterIdentity struct
-		registerNameArgs := IOTRegistryTX.RegisterIdentityTx{}
+		registerNameArgs := IOTRegistryTX.RegisterIdentityTX{}
 		err = proto.Unmarshal(argsBytes, &registerNameArgs)
 		if err != nil {
 			fmt.Printf("Invalid argument expected RegisterNameTX protocol buffer %s", err.Error())
@@ -154,7 +154,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 		message := registerNameArgs.OwnerName + ":" + registerNameArgs.Data
 
-		success, err := verify(creatorKeyBytes, creatorSig, message)
+		err = verify(creatorKeyBytes, creatorSig, message)
 		if err != nil {
 			return nil, errors.New("Error verifying signature")
 		}
@@ -196,14 +196,14 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//check if owner is valid id (name exists in registry)
-		validIDCheckBytes, err := stub.GetState("Name: " + registerThingArgs.OwnerName)
+		checkIDBytes, err := stub.GetState("Name: " + registerThingArgs.OwnerName)
 		//looks like OwnerName defined in .proto but not in pb.go
 		if err != nil {
 			fmt.Println("Could not get OwnerName State")
 			return nil, errors.New("Could not get OwnerName State")
 		}
 
-		if len(validIDCheckBytes) == 0 {
+		if len(checkIDBytes) == 0 {
 			fmt.Println("OwnerName is not in registry")
 			return nil, errors.New("OwnerName is not in registry")
 		}
@@ -220,7 +220,13 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			}
 		}
 
-		creatorKeyBytes := registerThingArgs.OwnerName
+		ownerIdentity := IOTRegistryStore.Identities{}
+		err = proto.Unmarshal(checkIDBytes, &ownerIdentity)
+		if err != nil {
+			return nil, err
+		}
+
+		creatorKeyBytes := ownerIdentity.Pubkey
 
 		creatorSig := registerThingArgs.Signature
 
@@ -229,14 +235,17 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			message += ":" + identity
 		}
 
-		success, err := verify(creatorKeyBytes, creatorSig, message)
+		err = verify(creatorKeyBytes, creatorSig, message)
 		if err != nil {
 			return nil, errors.New("Error verifying signature")
 		}
 
 		for _, identity := range registerThingArgs.Identities {
+			//not sure what should go in alias.
+			identitySlice := make([]string, 1)
+			identitySlice[0] = identity
 			store := IOTRegistryStore.Things{}
-			store.Alias = identity
+			store.Alias = identitySlice
 			store.OwnerName = registerThingArgs.OwnerName
 			store.Data = registerThingArgs.Data
 
