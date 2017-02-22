@@ -263,7 +263,7 @@ func TestPopcodeChaincode(t *testing.T) {
 	}
 	registerNameBytes, err := proto.Marshal(&registerName)
 	registerNameBytesStr := hex.EncodeToString(registerNameBytes)
-	_, err = stub.MockInvoke("3", "registerName", []string{registerNameBytesStr})
+	_, err = stub.MockInvoke("3", "registerOwner", []string{registerNameBytesStr})
 	if err != nil {
 		fmt.Println(err)
 	}

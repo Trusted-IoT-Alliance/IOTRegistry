@@ -127,7 +127,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 	}
 
 	switch function {
-	case "registerName":
+	case "registerOwner":
 		//declare and initialize RegisterIdentity struct
 		registerNameArgs := IOTRegistryTX.RegisterIdentityTX{}
 		err = proto.Unmarshal(argsBytes, &registerNameArgs)
@@ -192,21 +192,21 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		//if nonce exists
 		if len(nonceCheckBytes) != 0 {
 			fmt.Println("Nonce is unavailable")
-			return nil, errors.New("Nonce is unavailable")
+			return nil, fmt.Errorf("Nonce is unavailable %s", hex.EncodeToString(registerThingArgs.Nonce))
 		}
 
 		//check if owner is valid id (name exists in registry)
 		checkIDBytes, err := stub.GetState("Name: " + registerThingArgs.OwnerName)
 		//looks like OwnerName defined in .proto but not in pb.go
 		if err != nil {
-			fmt.Println("Could not get OwnerName State")
-			return nil, errors.New("Could not get OwnerName State")
+			fmt.Println("Failed to look up Owner Name")
+			return nil, fmt.Errorf("Failed to look up Owner Name")
 		}
 
 		//if owner is not registered name
 		if len(checkIDBytes) == 0 {
-			fmt.Println("OwnerName is not in registry")
-			return nil, errors.New("OwnerName is not in registry")
+			fmt.Println("Owner Name is not registered")
+			return nil, fmt.Errorf("Owner Name is not registered %s", registerThingArgs.OwnerName)
 		}
 
 		//check if any identities exist
@@ -219,7 +219,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			//throw error if any of the identities already exist
 			if len(aliasCheckBytes) != 0 {
 				fmt.Printf("Identity: (%s) is already in registry", identity)
-				return nil, errors.New("OwnerName is not in registry")
+				return nil, fmt.Errorf("Identity: (%s) is already in registry", identity)
 			}
 		}
 
@@ -234,6 +234,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 		creatorSig := registerThingArgs.Signature
 
+		//TODO review later
 		message := registerThingArgs.OwnerName
 		for _, identity := range registerThingArgs.Identities {
 			message += ":" + identity
@@ -246,25 +247,34 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 		//this is where I'm not positive about what the logic is supposed to be.
 		for _, identity := range registerThingArgs.Identities {
-			//not sure what should go in alias.
-			identitySlice := make([]string, 1)
-			identitySlice[0] = identity
-			store := IOTRegistryStore.Things{}
-			store.Alias = identitySlice
-			store.OwnerName = registerThingArgs.OwnerName
-			store.Data = registerThingArgs.Data
 
-			storeBytes, err := proto.Marshal(&store)
-			if err != nil {
-				fmt.Println(err)
-			}
+			alias := IOTRegistryStore.Alias{}
+			alias.Nonce = registerThingArgs.Nonce
+			aliasStoreBytes, err := proto.Marshal(&alias)
 
-			err = stub.PutState("IdentityName: "+identity, storeBytes)
 			if err != nil {
-				fmt.Printf(err.Error())
-				return nil, err
+				//TODO
 			}
+			stub.PutState("Alias:"+identity, aliasStoreBytes)
 		}
+		//not sure what should go in alias.
+
+		store := IOTRegistryStore.Things{}
+		store.Alias = registerThingArgs.Identities
+		store.OwnerName = registerThingArgs.OwnerName
+		store.Data = registerThingArgs.Data
+
+		storeBytes, err := proto.Marshal(&store)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		err = stub.PutState("Thing: "+hex.EncodeToString(registerThingArgs.Nonce), storeBytes)
+		if err != nil {
+			fmt.Printf(err.Error())
+			return nil, err
+		}
+
 	}
 
 	// change from argument transaction store into
