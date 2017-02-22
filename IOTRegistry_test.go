@@ -48,23 +48,6 @@ import (
 // 	}
 // }
 
-// func checkQuery(t *testing.T, stub *shim.MockStub, name string, value string) {
-// 	bytes, err := stub.MockQuery("balance", []string{name})
-
-// 	if err != nil {
-// 		fmt.Println("Query", name, "failed", err)
-// 		t.FailNow()
-// 	}
-// 	if bytes == nil {
-// 		fmt.Println("Query", name, "failed to get value")
-// 		t.FailNow()
-// 	}
-// 	if string(bytes) != value {
-// 		fmt.Println("Query value", name, "was not", value, "as expected instead", string(bytes))
-// 		t.FailNow()
-// 	}
-// }
-
 // func mint(t *testing.T, stub *shim.MockStub, counterSeed string) {
 // 	createArgs := TuxedoPopsTX.CreateTX{}
 // 	createArgs.Address = "74ded2036e988fc56e3cff77a40c58239591e921"
@@ -219,6 +202,24 @@ func generateRegisterNameSig(name string, data string, privateKeyStr string) str
 // 	return bytes, err
 // }
 
+func checkQuery(t *testing.T, stub *shim.MockStub, function string, name string, value string) {
+	bytes, err := stub.MockQuery(function, []string{name})
+
+	if err != nil {
+		fmt.Println("Query", name, "failed", err)
+		t.FailNow()
+	}
+	if bytes == nil {
+		fmt.Println("Query", name, "failed to get value")
+		t.FailNow()
+	}
+	fmt.Printf("returned from query: %s", bytes)
+	// if string(bytes) != value {
+	// 	fmt.Println("Query value", name, "was not", value, "as expected instead", string(bytes))
+	// 	t.FailNow()
+	// }
+}
+
 func checkInit(t *testing.T, stub *shim.MockStub, args []string) {
 	_, err := stub.MockInit("1", "", args)
 	if err != nil {
@@ -244,6 +245,7 @@ func TestPopcodeChaincode(t *testing.T) {
 	// bst := new(IOTRegistry)
 	// stub := shim.NewMockStub("tuxedoPops", bst)
 
+	//TODO EXPORT NEXT TWENTY THREE LINES TO REGISTERNAME_TEST
 	registerName := IOTRegistryTX.RegisterIdentityTX{}
 	// registerNameArgs.Address = "74ded2036e988fc56e3cff77a40c58239591e921"
 	registerName.OwnerName = "Alice"
@@ -267,6 +269,8 @@ func TestPopcodeChaincode(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	checkQuery(t, stub, "owner", "Alice", `{"Address":"74ded2036e988fc56e3cff77a40c58239591e921","Counter":"af5eef44907ccdcc33051d035f32f42de0d093fac2fd9d15923448f6af46bc43","Outputs":null}`)
 
 	// registerThing := IOTRegistryTX.RegisterThingTX{}
 
