@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"testing"
 
 	proto "github.com/golang/protobuf/proto"
@@ -180,7 +181,28 @@ import (
 // 	// combineArgs.CreatorSig =
 // }
 
-func generateRegisterNameSig(name string, data string, privateKeyStr string) string {
+var hexChars = []rune("0123456789abcdef")
+var alpha = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+//testing tool for creating randomized string with a certain character makeup
+func randString(n int, kindOfString string) string {
+	b := make([]rune, n)
+	if kindOfString == "hex" {
+		for i := range b {
+			b[i] = hexChars[rand.Intn(len(hexChars))]
+		}
+	} else if kindOfString == "alpha" {
+		for i := range b {
+			b[i] = alpha[rand.Intn(len(alpha))]
+		}
+	} else {
+		fmt.Println("Error retrieving character list for random string generation")
+		return ""
+	}
+	return string(b)
+}
+
+func generateRegisterNameSig(name string, data string, privateKeyStr string) (string, error) {
 
 	privKeyByte, _ := hex.DecodeString(privateKeyStr)
 
@@ -190,8 +212,31 @@ func generateRegisterNameSig(name string, data string, privateKeyStr string) str
 	fmt.Println("Signed Message")
 	fmt.Println(message)
 	messageBytes := sha256.Sum256([]byte(message))
-	sig, _ := privKey.Sign(messageBytes[:])
-	return hex.EncodeToString(sig.Serialize())
+	sig, err := privKey.Sign(messageBytes[:])
+	if err != nil {
+		return "", fmt.Errorf("error signing message (%s) with private key (%s)", message, privateKeyStr)
+	}
+	return hex.EncodeToString(sig.Serialize()), nil
+}
+
+func generateRegisterThingSig(name string, identities []string, privateKeyStr string) (string, error) {
+
+	privKeyByte, _ := hex.DecodeString(privateKeyStr)
+
+	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
+
+	message := name
+	for _, identity := range identities {
+		message += ":" + identity
+	}
+	fmt.Println("Signed Message")
+	fmt.Println(message)
+	messageBytes := sha256.Sum256([]byte(message))
+	sig, err := privKey.Sign(messageBytes[:])
+	if err != nil {
+		return "", fmt.Errorf("error signing message (%s) with private key (%s)", message, privateKeyStr)
+	}
+	return hex.EncodeToString(sig.Serialize()), nil
 }
 
 // func (stub *MockStub) MockInvoke(uuid string, function string, args []string) ([]byte, error) {
@@ -202,9 +247,15 @@ func generateRegisterNameSig(name string, data string, privateKeyStr string) str
 // 	return bytes, err
 // }
 
-func checkQuery(t *testing.T, stub *shim.MockStub, function string, name string, value string) {
-	bytes, err := stub.MockQuery(function, []string{name})
-
+func checkQuery(t *testing.T, stub *shim.MockStub, function string, name string, nonce string, value string) {
+	var err error = nil
+	var bytes []byte
+	if function == "owner" {
+		bytes, err = stub.MockQuery(function, []string{name})
+	} else {
+		fmt.Printf("fuction: %s\n nonce: %s\n", function, nonce)
+		bytes, err = stub.MockQuery(function, []string{nonce})
+	}
 	if err != nil {
 		fmt.Println("Query", name, "failed", err)
 		t.FailNow()
@@ -213,7 +264,7 @@ func checkQuery(t *testing.T, stub *shim.MockStub, function string, name string,
 		fmt.Println("Query", name, "failed to get value")
 		t.FailNow()
 	}
-	fmt.Printf("returned from query: %s", bytes)
+	fmt.Printf("\nreturned from query: %s\n\n", bytes)
 	// if string(bytes) != value {
 	// 	fmt.Println("Query value", name, "was not", value, "as expected instead", string(bytes))
 	// 	t.FailNow()
@@ -228,36 +279,30 @@ func checkInit(t *testing.T, stub *shim.MockStub, args []string) {
 	}
 }
 
-type RegisterThingTX struct {
-	Nonce      []byte   `protobuf:"bytes,1,opt,name=Nonce,proto3" json:"Nonce,omitempty"`
-	Identities []string `protobuf:"bytes,2,rep,name=Identities" json:"Identities,omitempty"`
-	OwnerName  string   `protobuf:"bytes,3,opt,name=OwnerName" json:"OwnerName,omitempty"`
-	Signature  []byte   `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
-	Data       string   `protobuf:"bytes,5,opt,name=Data" json:"Data,omitempty"`
-}
+// type RegisterThingTX struct {
+// 	Nonce      []byte   `protobuf:"bytes,1,opt,name=Nonce,proto3" json:"Nonce,omitempty"`
+// 	Identities []string `protobuf:"bytes,2,rep,name=Identities" json:"Identities,omitempty"`
+// 	OwnerName  string   `protobuf:"bytes,3,opt,name=OwnerName" json:"OwnerName,omitempty"`
+// 	Signature  []byte   `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
+// 	Data       string   `protobuf:"bytes,5,opt,name=Data" json:"Data,omitempty"`
+// }
 
-func TestPopcodeChaincode(t *testing.T) {
-	bst := new(IOTRegistry)
-
-	stub := shim.NewMockStub("IOTRegistry", bst)
-	// checkInit(t, stub, []string{"Hello World"})
-	// stub.MockInvoke("1", "registerName", "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc")
-	// bst := new(IOTRegistry)
-	// stub := shim.NewMockStub("tuxedoPops", bst)
-
-	//TODO EXPORT NEXT TWENTY THREE LINES TO REGISTERNAME_TEST
+//Puts an owner state to ledger
+func registerOwner(t *testing.T, stub *shim.MockStub, name string, privateKey string, pubKey string, data string) {
 	registerName := IOTRegistryTX.RegisterIdentityTX{}
 	// registerNameArgs.Address = "74ded2036e988fc56e3cff77a40c58239591e921"
-	registerName.OwnerName = "Alice"
-	pubKeyBytes, err := hex.DecodeString("02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc")
+	registerName.OwnerName = name
+	pubKeyBytes, err := hex.DecodeString(pubKey)
 	if err != nil {
 		fmt.Println(err)
 	}
 	registerName.PubKey = pubKeyBytes
-	registerName.Data = "Test Data"
+	registerName.Data = data
 
-	privKeyString := "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20"
-	hexOwnerSig := generateRegisterNameSig(registerName.OwnerName, registerName.Data, privKeyString)
+	hexOwnerSig, err := generateRegisterNameSig(registerName.OwnerName, registerName.Data, privateKey)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	registerName.Signature, err = hex.DecodeString(hexOwnerSig)
 	if err != nil {
@@ -269,9 +314,77 @@ func TestPopcodeChaincode(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
 
-	checkQuery(t, stub, "owner", "Alice", `{"Address":"74ded2036e988fc56e3cff77a40c58239591e921","Counter":"af5eef44907ccdcc33051d035f32f42de0d093fac2fd9d15923448f6af46bc43","Outputs":null}`)
+type RegisterThingTX struct {
+	Nonce      []byte   `protobuf:"bytes,1,opt,name=Nonce,proto3" json:"Nonce,omitempty"`
+	Identities []string `protobuf:"bytes,2,rep,name=Identities" json:"Identities,omitempty"`
+	OwnerName  string   `protobuf:"bytes,3,opt,name=OwnerName" json:"OwnerName,omitempty"`
+	Signature  []byte   `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
+	Data       string   `protobuf:"bytes,5,opt,name=Data" json:"Data,omitempty"`
+}
 
+func registerThing(t *testing.T, stub *shim.MockStub, nonce []byte, identities []string, name string,
+	privateKey string, pubKey string, data string) {
+	registerThing := IOTRegistryTX.RegisterThingTX{}
+
+	registerThing.Nonce = nonce
+	registerThing.Identities = identities
+	registerThing.OwnerName = name
+
+	// pubKeyBytes, err := hex.DecodeString(pubKey)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// pubKeyBytes = nil
+
+	hexThingSig, err := generateRegisterThingSig(name, identities, privateKey)
+	if err != nil {
+		fmt.Println(err)
+	}
+	registerThing.Signature, err = hex.DecodeString(hexThingSig)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	registerThing.Data = data
+	registerThingBytes, err := proto.Marshal(&registerThing)
+	registerThingBytesStr := hex.EncodeToString(registerThingBytes)
+	_, err = stub.MockInvoke("3", "registerThing", []string{registerThingBytesStr})
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func TestIOTRegistryChaincode(t *testing.T) {
+	bst := new(IOTRegistry)
+
+	stub := shim.NewMockStub("IOTRegistry", bst)
+	// checkInit(t, stub, []string{"Hello World"})
+	// stub.MockInvoke("1", "registerName", "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc")
+	// bst := new(IOTRegistry)
+	// stub := shim.NewMockStub("tuxedoPops", bst)
+
+	registerOwner(t, stub, "Alice",
+		/*private key: */ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20",
+		/*public key: */ "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc", "Test Data")
+
+	checkQuery(t, stub, "owner", "Alice", "", `""`)
+
+	nonceString := randString(32, "hex")
+	fmt.Printf("nonce:%s\n", nonceString)
+	nonceBytes, err := hex.DecodeString(nonceString)
+	if err != nil {
+		fmt.Printf("error decoding nonce hex string in TestIOTRegistry Chaincode: %v", err)
+	}
+
+	identities := []string{"Foo", "Bar"}
+	fmt.Printf("len identities: %d\n", len(identities))
+	registerThing(t, stub, nonceBytes, identities, "Alice",
+		/*private key: */ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20",
+		/*public key: */ "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc", "Test Data")
+
+	checkQuery(t, stub, "thing", "", nonceString, `""`)
 	// registerThing := IOTRegistryTX.RegisterThingTX{}
 
 	// registerThing.Identities = []string

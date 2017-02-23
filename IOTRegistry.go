@@ -236,6 +236,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		creatorSig := registerThingArgs.Signature
 
 		//TODO review later
+		//if below is changed then generateRegisterThingSig in IOTRegistry_test must match
 		message := registerThingArgs.OwnerName
 		for _, identity := range registerThingArgs.Identities {
 			message += ":" + identity
