@@ -263,7 +263,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		store.Alias = registerThingArgs.Identities
 		store.OwnerName = registerThingArgs.OwnerName
 		store.Data = registerThingArgs.Data
-
+		fmt.Printf("thing alias: %s\nthing ownerName: %s\nthing data: %s\n", store.Alias, store.OwnerName, store.Data)
 		storeBytes, err := proto.Marshal(&store)
 		if err != nil {
 			fmt.Println(err)
@@ -578,9 +578,13 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 			return nil, fmt.Errorf("No argument specified")
 		}
 
-		thing := IOTRegistryTX.RegisterThingTX{}
+		thing := IOTRegistryStore.Things{}
 
 		thingNonce := args[0]
+		// nonceString, err := hex.EncodeToString(thingNonce)
+
+		fmt.Printf("\nthingNonce: %s\n\n", thingNonce)
+
 		thingBytes, err := stub.GetState("Thing: " + thingNonce)
 		if err != nil {
 			fmt.Printf(err.Error())
@@ -596,6 +600,7 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 			fmt.Printf(err.Error())
 			return nil, err
 		}
+		fmt.Printf("thingAlias: %s\nthingOwnerName: %s\nthingData: %s\n", thing.Alias, thing.OwnerName, thing.Data)
 		return json.Marshal(thing)
 	}
 	return nil, nil
