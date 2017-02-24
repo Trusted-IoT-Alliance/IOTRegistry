@@ -37,15 +37,13 @@ func (t *IOTRegistry) Init(stub shim.ChaincodeStubInterface, function string, ar
 		return nil, fmt.Errorf("Invalid Init Arg: (%s)", args)
 	}
 
+	//not sure if next seven lines are necessary
 	counterSeed := sha256.Sum256([]byte(args[0]))
-
 	err := stub.PutState("CounterSeed", counterSeed[:])
-
 	if err != nil {
 		fmt.Printf("Error initializing CounterSeed")
 		return nil, fmt.Errorf("Error initializing CounterSeed: (%s)", counterSeed)
 	}
-
 	return nil, nil
 }
 
@@ -76,12 +74,10 @@ func verify(pubKeyBytes []byte, sigBytes []byte, message string) (err error) {
 }
 
 func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-
 	if len(args) == 0 {
 		fmt.Println("Insufficient arguments found")
 		return nil, fmt.Errorf("Insufficient arguments found")
 	}
-
 	argsBytes, err := hex.DecodeString(args[0])
 	if err != nil {
 		fmt.Printf("Invalid argument (%s) expected hex", args[0])
@@ -96,18 +92,27 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		if err != nil {
 			fmt.Printf("Invalid argument expected RegisterNameTX protocol buffer %s", err.Error())
 		}
-		fmt.Println(registerNameArgs.PubKey)
+
+		if len(registerNameArgs.OwnerName) == 0 {
+			return nil, fmt.Errorf("length of OwnerName (%s) is zero", registerNameArgs.OwnerName)
+		}
+		if len(registerNameArgs.PubKey) == 0 {
+			return nil, fmt.Errorf("length of Pubkey (%s) is zero", registerNameArgs.PubKey)
+		}
+		if len(registerNameArgs.Signature) == 0 {
+			return nil, fmt.Errorf("length of Signature (%s) is zero", registerNameArgs.Signature)
+		}
 		//check if name is available
 		registerNameBytes, err := stub.GetState("OwnerName: " + registerNameArgs.OwnerName)
 		if err != nil {
 			fmt.Println("Could not get OwnerName State")
-			return nil, errors.New("Could not get OwnerName State")
+			return nil, fmt.Errorf("Could not get OwnerName (%s) State", registerNameArgs.OwnerName)
 		}
 
 		//if name unavailable
 		if len(registerNameBytes) != 0 {
 			fmt.Println("OwnerName is unavailable")
-			return nil, errors.New("OwnerName is unavailable")
+			return nil, fmt.Errorf("OwnerName (%s) is unavailable", registerNameArgs.OwnerName)
 		}
 
 		creatorKeyBytes := registerNameArgs.PubKey
@@ -116,7 +121,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 		err = verify(creatorKeyBytes, creatorSig, message)
 		if err != nil {
-			return nil, errors.New("Error verifying signature")
+			return nil, fmt.Errorf("Error verifying signature (%s)", creatorSig)
 		}
 
 		//marshall into store type. Then put that variable into the state
@@ -139,6 +144,16 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		err = proto.Unmarshal(argsBytes, &registerThingArgs)
 		if err != nil {
 			fmt.Printf("Invalid argument expected RegisterThingTX protocol buffer %s", err.Error())
+		}
+
+		if len(registerThingArgs.OwnerName) == 0 {
+			return nil, fmt.Errorf("length of OwnerName (%s) is zero", registerThingArgs.OwnerName)
+		}
+		if len(registerThingArgs.Nonce) == 0 {
+			return nil, fmt.Errorf("length of Nonce (%s) is zero", registerThingArgs.Nonce)
+		}
+		if len(registerThingArgs.Signature) == 0 {
+			return nil, fmt.Errorf("length of Signature (%s) is zero", registerThingArgs.Signature)
 		}
 
 		//check if nonce already exists
@@ -233,10 +248,19 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 	case "registerSpec":
 		specArgs := IOTRegistryTX.RegisterSpecTX{}
-
 		err = proto.Unmarshal(argsBytes, &specArgs)
 		if err != nil {
 			fmt.Printf("Invalid argument expected RegisterSpecTX protocol buffer %s", err.Error())
+		}
+
+		if len(specArgs.OwnerName) == 0 {
+			return nil, fmt.Errorf("length of OwnerName (%s) is zero", specArgs.OwnerName)
+		}
+		if len(specArgs.SpecName) == 0 {
+			return nil, fmt.Errorf("length of Nonce (%s) is zero", specArgs.SpecName)
+		}
+		if len(specArgs.Signature) == 0 {
+			return nil, fmt.Errorf("length of Signature (%s) is zero", specArgs.Signature)
 		}
 
 		//check if spec already exists
@@ -246,10 +270,11 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			return nil, errors.New("Could not get Spec State")
 		}
 
+		// fmt.Printf("******specNameCheckBytes (%s)\nlen (%d)", specNameCheckBytes, len(specNameCheckBytes))
 		//if spec already exists
 		if len(specNameCheckBytes) != 0 {
 			fmt.Println("SpecName is unavailable")
-			return nil, fmt.Errorf("SpecName is unavailable %s", specArgs.SpecName)
+			return nil, fmt.Errorf("SpecName (%s) is unavailable", specArgs.SpecName)
 		}
 
 		//check if owner is valid id (name exists in registry)
@@ -313,6 +338,60 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 	return nil, nil
 }
 
+func ownerNameToJSON(ownerName string, pubKey []byte) ([]byte, error) {
+	type JSONIdentities struct {
+		OwnerName string
+		Pubkey    string
+	}
+	jsonOwner := JSONIdentities{}
+	jsonOwner.OwnerName = ownerName
+	jsonOwner.Pubkey = hex.EncodeToString(pubKey)
+
+	jsonstring, err := json.Marshal(jsonOwner)
+	if err != nil {
+		return nil, err
+	}
+	return jsonstring, nil
+}
+
+// func ThingToJSON() []byte {
+// 	type JSONThings struct {
+// 		Alias     []string
+// 		OwnerName string
+// 		Data      string
+// 		SpecName  string
+// 	}
+// 	jsonThing := JSONThings{}
+// 	jsonThing.Address = p.Address
+// 	jsonThing.Counter = hex.EncodeToString(p.Counter)
+// 	for _, o := range p.Outputs {
+// 		jsonThing.Outputs = append(jsonThing.Outputs, string(o.ToJSON()))
+// 	}
+// 	jsonstring, err := json.Marshal(jsonThing)
+// 	if err != nil {
+// 		return nil
+// 	}
+// 	return jsonstring
+// }
+
+// func SpecToJSON(address string, ) []byte {
+// 	type JSONSpec struct {
+// 		OwnerName string
+// 		Data      string
+// 	}
+// 	jsonSpec := JSONSpec{}
+// 	jsonSpec.Address = p.Address
+// 	jsonSpec.Counter = hex.EncodeToString(p.Counter)
+// 	for _, o := range p.Outputs {
+// 		jsonSpec.Outputs = append(jsonSpec.Outputs, string(o.ToJSON()))
+// 	}
+// 	jsonstring, err := json.Marshal(jsonSpec)
+// 	if err != nil {
+// 		return nil
+// 	}
+// 	return jsonstring
+// }
+
 func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	// fmt.Printf("function: %s\n", function)
 	switch function {
@@ -342,10 +421,12 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 			fmt.Printf(err.Error())
 			return nil, err
 		}
-
-		json, err := json.Marshal(owner)
+		jsonBytes, err := ownerNameToJSON(owner.OwnerName, owner.Pubkey)
+		// jsonstring, err = json.Marshal(owner)
 		// fmt.Printf("json:%s\n", json)
-		return json, err
+		// fmt.Printf("\nPUBKEY: (%s)\n", hex.EncodeToString(owner.Pubkey))
+		// owner.Pubkey = []byte(hex.EncodeToString((owner.Pubkey)))
+		return jsonBytes, err
 	case "thing":
 		if len(args) != 1 {
 			return nil, fmt.Errorf("No argument specified")
