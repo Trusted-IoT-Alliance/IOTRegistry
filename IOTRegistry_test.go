@@ -129,7 +129,7 @@ func checkQuery(t *testing.T, stub *shim.MockStub, function string, index string
 	}
 	fmt.Printf("\nreturned from query: %s\n\n", bytes)
 	if string(bytes) != value {
-		fmt.Printf("json string (%s) returned from (%s) function query. Want (%s)", string(bytes), function, value)
+		fmt.Printf("json string \n(%s)\nreturned from (%s) function query. Want \n(%s)\n", string(bytes), function, value)
 		t.FailNow()
 	}
 }
@@ -251,7 +251,80 @@ func getPubKeyString(privKeyString string) (string, error) {
 	return pubkKeyString, nil
 }
 
+//all variables:
+//private key string, public key string, t, stub, ownerName string, data string, query_values, nonceString, spec string, identities []string,
+
+func runFullTest(t *testing.T, stub *shim.MockStub, privateKeyString string, pubKeyString string,
+	ownerName string, data string, nonceBytes []byte, specName string, identities []string) {
+
+	registerOwner(t, stub, ownerName, data, privateKeyString, pubKeyString)
+	index := ownerName
+	expectedValue := `{"OwnerName":"` + ownerName + `","Pubkey":"` + pubKeyString + `"}`
+	//`{"OwnerName":"Alice","Pubkey":"AspKjH3FCQ+STN4iZK8kDXb21YpdLRXIxfWdlccL2eTc"}`
+	checkQuery(t, stub, "owner", index, expectedValue)
+	registerThing(t, stub, nonceBytes, identities, ownerName, specName, data, privateKeyString)
+	index = hex.EncodeToString(nonceBytes)
+	checkQuery(t, stub, "thing", index, `{"Alias":["Foo","Bar"],"OwnerName":"Alice","Data":"test data","SpecName":"test spec"}`)
+	registerSpec(t, stub, specName, ownerName, data, privateKeyString)
+	index = specName
+	checkQuery(t, stub, "spec", index, `{"OwnerName":"Alice","Data":"test data"}`)
+}
+
 func TestIOTRegistryChaincode(t *testing.T) {
+	//declaring and initializing variables for all tests
+	bst := new(IOTRegistry)
+	stub := shim.NewMockStub("IOTRegistry", bst)
+
+	//test register thing
+	nonceString1 := randString(32, "hex")
+	// fmt.Printf("nonce:%s\n", nonceString1)
+	nonceBytes1, err := hex.DecodeString(nonceString1)
+	if err != nil {
+		fmt.Printf("error decoding nonce hex string in TestIOTRegistry Chaincode: %v", err)
+	}
+
+	// nonceString2 := randString(32, "hex")
+	// // fmt.Printf("nonce:%s\n", nonceString2)
+	// nonceBytes2, err := hex.DecodeString(nonceString2)
+	// if err != nil {
+	// 	fmt.Printf("error decoding nonce hex string in TestIOTRegistry Chaincode: %v", err)
+	// }
+	// nonceString3 := randString(32, "hex")
+	// // fmt.Printf("nonce:%s\n", nonceString3)
+	// nonceBytes3, err := hex.DecodeString(nonceString3)
+	// if err != nil {
+	// 	fmt.Printf("error decoding nonce hex string in TestIOTRegistry Chaincode: %v", err)
+	// }
+	// nonceString4 := randString(32, "hex")
+	// // fmt.Printf("nonce:%s\n", nonceString4)
+	// nonceBytes4, err := hex.DecodeString(nonceString4)
+	// if err != nil {
+	// 	fmt.Printf("error decoding nonce hex string in TestIOTRegistry Chaincode: %v", err)
+	// }
+
+	var registryTests = []struct {
+		privateKeyString string
+		pubKeyString     string
+		ownerName        string
+		data             string
+		nonceBytes       []byte
+		specName         string
+		identities       []string
+	}{
+		{"94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20", "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc", "Alice",
+			"test data", nonceBytes1, "test spec", []string{"Foo", "Bar"}},
+		// {"94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20", "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc", "Alice",
+		// 	"test data 1", nonceBytes2, "test spec 1", []string{"ident1", "ident2", "ident3"}},
+		// {"94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20", "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc", "Bob",
+		// 	"test data 2", nonceBytes3, "test spec 2", []string{"ident4", "ident5", "ident6"}},
+		// {"94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20", "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc", "Cassandra",
+		// 	"test data 3", nonceBytes4, "test spec 3", []string{"ident7", "ident8", "ident9"}},
+	}
+	for _, test := range registryTests {
+		runFullTest(t, stub, test.privateKeyString, test.pubKeyString,
+			test.ownerName, test.data, test.nonceBytes, test.specName, test.identities)
+	}
+
 	//testing private and public key generation
 	privKeyString, err := newPrivateKeyString()
 	if err != nil {
@@ -262,33 +335,94 @@ func TestIOTRegistryChaincode(t *testing.T) {
 		fmt.Println(err)
 	}
 	fmt.Printf("new privKey: (%s)\nnew pubKey: %s\n", privKeyString, pubKeyString)
-
-	//declaring and initializing variables for all tests
-	bst := new(IOTRegistry)
-	stub := shim.NewMockStub("IOTRegistry", bst)
-
-	//test register owner
-	registerOwner(t, stub, "Alice", "Test Data",
-		/*private key: */ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20",
-		/*public key: */ "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc")
-	checkQuery(t, stub, "owner", "Alice", `{"OwnerName":"Alice","Pubkey":"AspKjH3FCQ+STN4iZK8kDXb21YpdLRXIxfWdlccL2eTc"}`)
-
-	//test register thing
-	nonceString := randString(32, "hex")
-	fmt.Printf("nonce:%s\n", nonceString)
-	nonceBytes, err := hex.DecodeString(nonceString)
-	if err != nil {
-		fmt.Printf("error decoding nonce hex string in TestIOTRegistry Chaincode: %v", err)
-	}
-	spec := "Test spec"
-	identities := []string{"Foo", "Bar"}
-	fmt.Printf("len identities: %d\n", len(identities))
-	registerThing(t, stub, nonceBytes, identities, "Alice", spec, "Test Data",
-		/*private key: */ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20")
-	checkQuery(t, stub, "thing", nonceString, `{"Alias":["Foo","Bar"],"OwnerName":"Alice","Data":"Test Data","Spec":"Test spec"}`)
-
-	// test register spec
-	registerSpec(t, stub, "Test spec 1", "Alice", "Test data",
-		/*private key: */ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20")
-	checkQuery(t, stub, "spec", "Test spec 1", `{"OwnerName":"Alice","Data":"Test data"}`)
 }
+
+// //test register owner
+// registerOwner(t, stub, "Alice", "Test Data",
+// 	/*private key: */ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20",
+// 	/*public key: */ "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc")
+// checkQuery(t, stub, "owner", "Alice", `{"OwnerName":"Alice","Pubkey":"AspKjH3FCQ+STN4iZK8kDXb21YpdLRXIxfWdlccL2eTc"}`)
+
+// spec := "Test spec"
+// identities := []string{"Foo", "Bar"}
+// fmt.Printf("len identities: %d\n", len(identities))
+// registerThing(t, stub, nonceBytes, identities, "Alice", spec, "Test Data",
+// 	/*private key: */ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20")
+// checkQuery(t, stub, "thing", nonceString, `{"Alias":["Foo","Bar"],"OwnerName":"Alice","Data":"Test Data","SpecName":"Test spec"}`)
+
+// // test register spec
+// registerSpec(t, stub, "Test spec 1", "Alice", "Test data",
+// 	/*private key: */ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20")
+// checkQuery(t, stub, "spec", "Test spec 1", `{"OwnerName":"Alice","Data":"Test data"}`)
+
+// func checkQuery(t *testing.T, stub *shim.MockStub, function string, index string, expected map[string]string) {
+// 	var err error = nil
+// 	var bytes []byte
+
+// 	bytes, err = stub.MockQuery(function, []string{index})
+// 	if err != nil {
+// 		fmt.Println("Query", index, "failed", err)
+// 		t.FailNow()
+// 	}
+// 	if bytes == nil {
+// 		fmt.Println("Query", index, "failed to get value")
+// 		t.FailNow()
+// 	}
+// 	fmt.Printf("\nreturned from query: %s\n\n", bytes)
+
+// 	// return bytes
+// 	var jsonMap map[string]interface{}
+// 	if err := json.Unmarshal(bytes, &jsonMap); err != nil {
+// 		fmt.Printf("error unmarshalling json string %s", bytes)
+// 	}
+
+// 	if function == "owner" {
+// 		if jsonMap["OwnerName"] != expected["OwnerName"] {
+// 			fmt.Printf("OwnerName got       (%s)\nOwnerName expected: (%s)\n", jsonMap["OwnerName"], expected["OwnerName"])
+// 			t.FailNow()
+// 		}
+// 		pubKeyBytes, _ := hex.DecodeString(jsonMap["Pubkey"].(string))
+// 		// fmt.Printf("bytes: %v\n", pubKeyBytes)
+// 		if hex.EncodeToString(pubKeyBytes) != expected["Pubkey"] {
+// 			fmt.Printf("Pubkey got       (%s)\nPubkey expected: (%s)\n", jsonMap["Pubkey"], expected["Pubkey"])
+// 			t.FailNow()
+// 		}
+
+// 	} else if function == "thing" {
+
+// 	} else if function == "spec" {
+
+// 	}
+// 	// fmt.Println(dat)
+// 	// In order to use the values in the decoded map, we’ll need to cast them to their appropriate type. For example here we cast the value in num to the expected float64 type.
+// 	// num := dat["num"].(float64)
+// 	// fmt.Println(num)
+// 	// if string(bytes) != value {
+// 	// 	fmt.Printf("json string \n(%s)\nreturned from (%s) function query. Want \n(%s)\n", string(bytes), function, value)
+// 	// 	t.FailNow()
+// 	// }
+// }
+
+// //all variables:
+// //private key string, public key string, t, stub, ownerName string, data string, query_values, nonceString, spec string, identities []string,
+
+// func runFullTest(t *testing.T, stub *shim.MockStub, privateKeyString string, pubKeyString string,
+// 	ownerName string, data string, nonceBytes []byte, specName string, identities []string) {
+
+// 	registerOwner(t, stub, ownerName, data, privateKeyString, pubKeyString)
+// 	index := ownerName
+// 	// expectedArgs := `{"OwnerName":"` + ownerName + `","Pubkey":"` + pubKeyString + `"}`
+// 	//`{"OwnerName":"Alice","Pubkey":"AspKjH3FCQ+STN4iZK8kDXb21YpdLRXIxfWdlccL2eTc"}`
+// 	var expectedArgs = make(map[string]string)
+// 	expectedArgs["OwnerName"] = ownerName
+// 	expectedArgs["Pubkey"] = pubKeyString
+// 	checkQuery(t, stub, "owner", index, expectedArgs)
+// 	registerThing(t, stub, nonceBytes, identities, ownerName, specName, data, privateKeyString)
+// 	index = hex.EncodeToString(nonceBytes)
+
+// 	// checkQuery(t, stub, "thing", index, `{"Alias":["Foo","Bar"],"OwnerName":"Alice","Data":"test data","SpecName":"test spec"}`)
+// 	// registerSpec(t, stub, specName, ownerName, data, privateKeyString)
+// 	// index = specName
+// 	// checkQuery(t, stub, "spec", index, `{"OwnerName":"Alice","Data":"test data"}`)
+
+// }

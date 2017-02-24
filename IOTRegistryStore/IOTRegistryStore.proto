@@ -20,7 +20,7 @@ message Things{
   repeated string Alias =1;
   string OwnerName =2;
   string Data =3;
-  string Spec =4;
+  string SpecName =4;
 }
 message Spec{
 	string OwnerName =2;

@@ -46,7 +46,7 @@ type Things struct {
 	Alias     []string `protobuf:"bytes,1,rep,name=Alias" json:"Alias,omitempty"`
 	OwnerName string   `protobuf:"bytes,2,opt,name=OwnerName" json:"OwnerName,omitempty"`
 	Data      string   `protobuf:"bytes,3,opt,name=Data" json:"Data,omitempty"`
-	Spec      string   `protobuf:"bytes,4,opt,name=Spec" json:"Spec,omitempty"`
+	SpecName  string   `protobuf:"bytes,4,opt,name=SpecName" json:"SpecName,omitempty"`
 }
 
 func (m *Things) Reset()         { *m = Things{} }
