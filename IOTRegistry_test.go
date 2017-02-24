@@ -78,8 +78,6 @@ func generateRegisterNameSig(ownerName string, data string, privateKeyStr string
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
 
 	message := ownerName + ":" + data
-	// fmt.Println("Signed Message")
-	// fmt.Println(message)
 	messageBytes := sha256.Sum256([]byte(message))
 	sig, err := privKey.Sign(messageBytes[:])
 	if err != nil {
@@ -101,8 +99,6 @@ func generateRegisterThingSig(ownerName string, identities []string, spec string
 	}
 	message += ":" + data
 	message += ":" + spec
-	// fmt.Println("Signed Message")
-	// fmt.Println(message)
 	messageBytes := sha256.Sum256([]byte(message))
 	sig, err := privKey.Sign(messageBytes[:])
 	if err != nil {
@@ -119,8 +115,6 @@ func generateRegisterSpecSig(specName string, ownerName string, data string, pri
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
 
 	message := specName + ":" + ownerName + ":" + data
-	// fmt.Println("Signed Message")
-	// fmt.Println(message)
 	messageBytes := sha256.Sum256([]byte(message))
 	sig, err := privKey.Sign(messageBytes[:])
 	if err != nil {
@@ -228,6 +222,18 @@ func registerSpec(t *testing.T, stub *shim.MockStub, specName string, ownerName 
 	return nil
 }
 
+/*
+	To create new private and public keys
+	privKeyString, err := newPrivateKeyString()
+	if err != nil {
+		fmt.Println(err)
+	}
+	pubKeyString, err := getPubKeyString(privKeyString)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf("new privKey: (%s)\nnew pubKey: %s\n", privKeyString, pubKeyString)
+*/
 //generates and returns SHA256 private key string
 func newPrivateKeyString() (string, error) {
 	privKey, err := btcec.NewPrivateKey(btcec.S256())
@@ -251,6 +257,7 @@ func getPubKeyString(privKeyString string) (string, error) {
 	return pubkKeyString, nil
 }
 
+//tests whether two string slices are identical, returning true or false
 func testEq(a, b []string) bool {
 	if a == nil && b == nil {
 		return true
@@ -329,7 +336,6 @@ type registryTest struct {
 	nonceBytes       []byte
 	specName         string
 	identities       []string
-	failureReason    string
 }
 
 func TestIOTRegistryChaincode(t *testing.T) {
@@ -353,24 +359,22 @@ func TestIOTRegistryChaincode(t *testing.T) {
 	if err != nil {
 		t.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err)
 	}
-
-	// fmt.Printf("1: %s\n2: %s\n3: %s\n4: %s\n", nonceString1, nonceString2, nonceString3, nonceString4)
 	var registryTestsSuccess = []registryTest{
 		{ /*private key  1*/ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20",
 			/*public key 1*/ "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc",
-			"Alice", "test data", nonceBytes1, "test spec", []string{"Foo", "Bar"}, ""},
+			"Alice", "test data", nonceBytes1, "test spec", []string{"Foo", "Bar"}},
 
 		{ /*private key  2*/ "246d4fa59f0baa3329d3908659936ac2ac9c3539dc925977759cffe3c6316e19",
 			/*public key 2*/ "03442b817ad2154766a8f5192fc5a7506b7e52cdbf4fcf8e1bc33764698443c3c9",
-			"Gerald", "test data 1", nonceBytes2, "test spec 2", []string{"one", "two", "three"}, ""},
+			"Gerald", "test data 1", nonceBytes2, "test spec 2", []string{"one", "two", "three"}},
 
 		{ /*private key  3*/ "166cc93d9eadb573b329b5993b9671f1521679cea90fe52e398e66c1d6373abf",
 			/*public key 3*/ "02242a1c19bc831cd95a9e5492015043250cbc17d0eceb82612ce08736b8d753a6",
-			"Bob", "test data 2", nonceBytes3, "test spec 3", []string{"ident4", "ident5", "ident6"}, ""},
+			"Bob", "test data 2", nonceBytes3, "test spec 3", []string{"ident4", "ident5", "ident6"}},
 
 		{ /*private key  4*/ "01b756f231c72747e024ceee41703d9a7e3ab3e68d9b73d264a0196bd90acedf",
 			/*public key 4*/ "020f2b95263c4b3be740b7b3fda4c2f4113621c1a7a360713a2540eeb808519cd6",
-			"Cassandra", "test data 3", nonceBytes4, "test spec 4", []string{"ident7", "ident8", "ident9"}, ""},
+			"Cassandra", "test data 3", nonceBytes4, "test spec 4", []string{"ident7", "ident8", "ident9"}},
 	}
 	for _, test := range registryTestsSuccess {
 		err := registerOwner(t, stub, test.ownerName, test.data, test.privateKeyString, test.pubKeyString)
@@ -403,101 +407,4 @@ func TestIOTRegistryChaincode(t *testing.T) {
 			t.Errorf("%v\n", err)
 		}
 	}
-	// var registryTestsFailure = []registryTest{
-	// 	{ /*private key  1*/ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20",
-	// 		public key 1 "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc",
-	// 		"Alice", "test data", nonceBytes1, "test spec", []string{"Foo", "Bar"}, ""},
-	// 	// { /*private key*/ "",
-	// 	// 	/*public key */ "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc",
-	// 	// 	"Amy", "test data", nonceBytes1, "test spec 0", []string{"Foo", "Bar"},
-	// 	// 	/*reason for failure*/ "no private key"},
-
-	// 	// { /*private key*/ "NotAPrivateKey",
-	// 	// 	/*public key */ "03442b817ad2154766a8f5192fc5a7506b7e52cdbf4fcf8e1bc33764698443c3c9", "Jim",
-	// 	// 	"test data", nonceBytes2, "test spec 2", []string{"one", "two", "three"},
-	// 	// 	/*reason for failure*/ "invalid private key"},
-
-	// 	// { /*private key*/ "246d4fa59f0baa3329d3908659936ac2ac9c3539dc925977759cffe3c6316e19",
-	// 	// 	/*public key */ "",
-	// 	// 	"Gerald", "test data", nonceBytes2, "test spec 2", []string{"one", "two", "three"},
-	// 	// 	/*reason for failure*/ "no public key"},
-
-	// 	// { /*private key*/ "246d4fa59f0baa3329d3908659936ac2ac9c3539dc925977759cffe3c6316e19",
-	// 	// 	/*public key */ "03442b817ad2154766a8f5192fc5a7506b7e52cdbf4fcf8e1bc33764698443c3c9",
-	// 	// 	"Moh", "test data", nonceBytes2, "test spec 2", []string{"one", "two", "three"},
-	// 	// 	/*reason for failure*/ "invalid private key"},
-
-	// 	// { /*private key*/ "246d4fa59f0baa3329d3908659936ac2ac9c3539dc925977759cffe3c6316e19",
-	// 	// 	/*public key */ "03442b817ad2154766a8f5192fc5a7506b7e52cdbf4fcf8e1bc33764698443c3c9",
-	// 	// 	"Able", "test data", nonceBytes2, "test spec 2", []string{"one", "two", "three"},
-	// 	// 	/*reason for failure*/ "invalid private key"},
-
-	// 	// { /*private key*/ "246d4fa59f0baa3329d3908659936ac2ac9c3539dc925977759cffe3c6316e19",
-	// 	// 	/*public key */ "03442b817ad2154766a8f5192fc5a7506b7e52cdbf4fcf8e1bc33764698443c3c9",
-	// 	// 	"Allison", "test data", nonceBytes2, "test spec 2", []string{"one", "two", "three"},
-	// 	// 	/*reason for failure*/ "invalid private key"},
-
-	// 	// { /*private key*/ "246d4fa59f0baa3329d3908659936ac2ac9c3539dc925977759cffe3c6316e19",
-	// 	// 	/*public key */ "03442b817ad2154766a8f5192fc5a7506b7e52cdbf4fcf8e1bc33764698443c3c9",
-	// 	// 	"Rachel", "test data", nonceBytes2, "test spec 2", []string{"one", "two", "three"},
-	// 	// 	/*reason for failure*/ "invalid private key"},
-
-	// 	// { /*private key*/ "246d4fa59f0baa3329d3908659936ac2ac9c3539dc925977759cffe3c6316e19",
-	// 	// 	/*public key */ "03442b817ad2154766a8f5192fc5a7506b7e52cdbf4fcf8e1bc33764698443c3c9",
-	// 	// 	"Geoffrey", "test data", nonceBytes2, "test spec 2", []string{"one", "two", "three"},
-	// 	// 	/*reason for failure*/ "invalid private key"},
-
-	// 	// { /*private key*/ "246d4fa59f0baa3329d3908659936ac2ac9c3539dc925977759cffe3c6316e19",
-	// 	// 	/*public key */ "03442b817ad2154766a8f5192fc5a7506b7e52cdbf4fcf8e1bc33764698443c3c9",
-	// 	// 	"Bill", "test data", nonceBytes2, "test spec 2", []string{"one", "two", "three"},
-	// 	// 	/*reason for failure*/ "invalid private key"},
-
-	// 	// { /*private key*/ "166cc93d9eadb573b329b5993b9671f1521679cea90fe52e398e66c1d6373abf",
-	// 	// 	/*public key */ "02242a1c19bc831cd95a9e5492015043250cbc17d0eceb82612ce08736b8d753a6",
-	// 	// 	"Kim", "test data 2", nonceBytes3, "test spec 3", []string{"ident4", "ident5", "ident6"},
-	// 	// 	/*reason for failure*/ ""},
-	// 	// // {"94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20", "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc", "Cassandra",
-	// 	// // 	"test data 3", nonceBytes4, "test spec 4", []string{"ident7", "ident8", "ident9"}, ""},
-	// }
-	// for _, test := range registryTestsFailure {
-	// 	err := registerOwner(t, stub, test.ownerName, test.data, test.privateKeyString, test.pubKeyString)
-	// 	if err == nil {
-	// 		t.Errorf("Expected error, got no error. This test should have failed because of %s\n", test.failureReason)
-	// 		t.FailNow()
-	// 	}
-	// 	index := test.ownerName
-	// 	checkQuery(t, stub, "owner", index, test)
-
-	// 	err = registerThing(t, stub, test.nonceBytes, test.identities, test.ownerName, test.specName, test.data, test.privateKeyString)
-	// 	if err == nil {
-	// 		t.Errorf("Expected error, got no error. This test should have failed because of %s\n", test.failureReason)
-	// 		t.FailNow()
-	// 	}
-
-	// 	index = hex.EncodeToString(test.nonceBytes)
-	// 	checkQuery(t, stub, "thing", index, test)
-
-	// 	err = registerSpec(t, stub, test.specName, test.ownerName, test.data, test.privateKeyString)
-	// 	if err == nil {
-	// 		t.Errorf("Expected error, got no error. This test should have failed because of %s\n", test.failureReason)
-	// 		t.FailNow()
-	// 	}
-	// 	index = test.specName
-	// 	checkQuery(t, stub, "spec", index, test)
-
-	// 	// `{"OwnerName":"Alice","Data":"test data"}`
-	// }
-
-	/*
-		To create new private and public keys
-		privKeyString, err := newPrivateKeyString()
-		if err != nil {
-			fmt.Println(err)
-		}
-		pubKeyString, err := getPubKeyString(privKeyString)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Printf("new privKey: (%s)\nnew pubKey: %s\n", privKeyString, pubKeyString)
-	*/
 }

@@ -236,7 +236,6 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		store.OwnerName = registerThingArgs.OwnerName
 		store.Data = registerThingArgs.Data
 		store.SpecName = registerThingArgs.Spec
-		// fmt.Printf("thing alias: %s\nthing ownerName: %s\nthing data: %s\n", store.Alias, store.OwnerName, store.Data)
 		storeBytes, err := proto.Marshal(&store)
 		if err != nil {
 			fmt.Println(err)
@@ -270,7 +269,6 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			return nil, errors.New("Could not get Spec State")
 		}
 
-		// fmt.Printf("******specNameCheckBytes (%s)\nlen (%d)", specNameCheckBytes, len(specNameCheckBytes))
 		//if spec already exists
 		if len(specNameCheckBytes) != 0 {
 			fmt.Println("SpecName is unavailable")
@@ -411,34 +409,21 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 
 		//Owner does not exist \/
 		if len(ownerBytes) == 0 {
-			// fmt.Printf("Owner does not exist\n")
 			return nil, fmt.Errorf("OwnerName (%s) does not exist\n", ownerName)
 		}
-
-		// err := owner.FromBytes(popcodeBytes)
 		err = proto.Unmarshal(ownerBytes, &owner)
 		if err != nil {
 			fmt.Printf(err.Error())
 			return nil, err
 		}
 		jsonBytes, err := ownerNameToJSON(owner.OwnerName, owner.Pubkey)
-		// jsonstring, err = json.Marshal(owner)
-		// fmt.Printf("json:%s\n", json)
-		// fmt.Printf("\nPUBKEY: (%s)\n", hex.EncodeToString(owner.Pubkey))
-		// owner.Pubkey = []byte(hex.EncodeToString((owner.Pubkey)))
 		return jsonBytes, err
 	case "thing":
 		if len(args) != 1 {
 			return nil, fmt.Errorf("No argument specified")
 		}
-
 		thing := IOTRegistryStore.Things{}
-
 		thingNonce := args[0]
-		// nonceString, err := hex.EncodeToString(thingNonce)
-
-		// fmt.Printf("\nthingNonce: %s\n\n", thingNonce)
-
 		thingBytes, err := stub.GetState("Thing: " + thingNonce)
 		if err != nil {
 			fmt.Printf(err.Error())
@@ -454,8 +439,6 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 			fmt.Printf(err.Error())
 			return nil, err
 		}
-		// fmt.Printf("thingAlias: %s\nthingOwnerName: %s\nthingData: %s\nthingSpec: %s",
-		// 	thing.Alias, thing.OwnerName, thing.Data, thing.SpecName)
 		return json.Marshal(thing)
 	case "spec":
 		if len(args) != 1 {
@@ -480,8 +463,6 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 			fmt.Printf(err.Error())
 			return nil, err
 		}
-		// fmt.Printf("ownerName: %s\nspceData: %s\n",
-		// 	spec.OwnerName, spec.Data)
 		return json.Marshal(spec)
 	}
 	return nil, nil
