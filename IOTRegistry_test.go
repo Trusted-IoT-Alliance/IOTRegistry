@@ -33,153 +33,6 @@ import (
 // Owner2 key
 // Public Key: 02e138b25db2e74c54f8ca1a5cf79e2d1ed6af5bd1904646e7dc08b6d7b0d12bfd
 // Private Key: b18b7d3082b3ff9438a7bf9f5f019f8a52fb64647ea879548b3ca7b551eefd65
-// func checkInit(t *testing.T, stub *shim.MockStub, args []string) {
-// 	_, err := stub.MockInit("1", "", args)
-// 	if err != nil {
-// 		fmt.Println("INIT", args, "failed", err)
-// 		t.FailNow()
-// 	}
-// }
-
-// func checkInvoke(t *testing.T, stub *shim.MockStub, args []string) {
-// 	_, err := stub.MockInvoke("1", "invoke", args)
-// 	if err != nil {
-// 		fmt.Println("invoke", args, "failed", err)
-// 		t.FailNow()
-// 	}
-// }
-
-// func mint(t *testing.T, stub *shim.MockStub, counterSeed string) {
-// 	createArgs := TuxedoPopsTX.CreateTX{}
-// 	createArgs.Address = "74ded2036e988fc56e3cff77a40c58239591e921"
-// 	createArgs.Amount = 10
-// 	pubKeyBytes, err := hex.DecodeString("03cc7d40833fdf46e05a7f86a6c9cf8a697a129fbae0676ad6bad71f163ea22b26")
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	createArgs.CreatorPubKey = pubKeyBytes
-// 	hexCreatorSig := generateCreateSig(counterSeed, 10, "Test Asset", "Test Data", "74ded2036e988fc56e3cff77a40c58239591e921", "7ff1ac3d9dfc56315ee610d0a15609d13c399cf9c92ba2e32e7b1d25ea5c9494")
-
-// 	createArgs.CreatorSig, err = hex.DecodeString(hexCreatorSig)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	createArgs.Data = "Test Data"
-// 	createArgs.Type = "Test Asset"
-// 	createArgBytes, err := proto.Marshal(&createArgs)
-// 	createArgBytesStr := hex.EncodeToString(createArgBytes)
-// 	_, err = stub.MockInvoke("3", "create", []string{createArgBytesStr})
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// }
-
-// func possess(t *testing.T, stub *shim.MockStub, counterSeed string, idx int) {
-// 	transferArgs := TuxedoPopsTX.TransferOwners{}
-// 	transferArgs.Address = "74ded2036e988fc56e3cff77a40c58239591e921"
-// 	transferArgs.Data = "Test possess"
-// 	transferArgs.PopcodePubKey, _ = hex.DecodeString("02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc")
-// 	ownerBytes, _ := hex.DecodeString("0278b76afbefb1e1185bc63ed1a17dd88634e0587491f03e9a8d2d25d9ab289ee7")
-// 	transferArgs.Owners = [][]byte{ownerBytes}
-// 	transferArgs.Output = int32(idx)
-
-// 	//could use a discussion of what's going on with ownerBytes... why encoded to [][]byte? see comment on 137
-// 	ownerHex := hex.EncodeToString(ownerBytes)
-// 	hexPossessSig := generatePossessSig(counterSeed, idx, "Test possess", ownerHex, "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20")
-// 	var err error
-// 	transferArgs.PopcodeSig, err = hex.DecodeString(hexPossessSig)
-// 	transferArgsBytes, _ := proto.Marshal(&transferArgs)
-// 	transferArgsBytesStr := hex.EncodeToString(transferArgsBytes)
-
-// 	_, err = stub.MockInvoke("4", "transfer", []string{transferArgsBytesStr})
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// }
-
-// func generatePossessSig(CounterSeedStr string, outputIdx int, data string, newOwnersHex string, privateKeyStr string) string {
-// 	privKeyByte, _ := hex.DecodeString(privateKeyStr)
-
-// 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
-
-// 	message := CounterSeedStr + ":" + strconv.FormatInt(int64(outputIdx), 10) + ":" + data
-
-// 	//from comment on 116...what is newOwnersHex?
-// 	newOwnersTmp, err := hex.DecodeString(newOwnersHex)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	newOwners := [][]byte{newOwnersTmp}
-
-// 	for _, newO := range newOwners {
-// 		message += ":"
-// 		message += hex.EncodeToString(newO)
-// 	}
-// 	// fmt.Printf("Signed message %s \n", message)
-// 	mDigest := sha256.Sum256([]byte(message))
-// 	sig, _ := privKey.Sign(mDigest[:])
-// 	return hex.EncodeToString(sig.Serialize())
-// }
-
-// // func generatePossessSig(CounterSeedStr string, outputIdx int, data string, newOwners [][]byte, privateKeyStr string) []byte {
-// // 	privKeyByte, _ := hex.DecodeString(privateKeyStr)
-
-// // 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
-
-// // 	message := CounterSeedStr + ":" + strconv.FormatInt(int64(outputIdx), 10) + ":" + data
-
-// // 	for _, newO := range newOwners {
-// // 		message += ":"
-// // 		message += hex.EncodeToString(newO)
-// // 	}
-// // 	// fmt.Printf("Signed message %s \n", message)
-// // 	mDigest := sha256.Sum256([]byte(message))
-// // 	sig, _ := privKey.Sign(mDigest[:])
-// // 	return sig.Serialize()
-// // }
-
-// func unitize(t *testing.T, stub *shim.MockStub, counterSeed string) {
-// 	unitizeArgs := TuxedoPopsTX.Unitize{}
-// 	unitizeArgs.Data = "Test Unitize"
-// 	unitizeArgs.DestAddress = "10734390011641497f489cb475743b8e50d429bb"
-// 	unitizeArgs.DestAmounts = []int32{10}
-// 	unitizeArgs.SourceAddress = "74ded2036e988fc56e3cff77a40c58239591e921"
-// 	unitizeArgs.SourceOutput = 0
-// 	unitizeArgs.PopcodePubKey, _ = hex.DecodeString("02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc")
-// 	ownerSig := generateUnitizeSig(counterSeed, unitizeArgs.DestAddress, 0, []int{10}, "Test Unitize", "7142c92e6eba38de08980eeb55b8c98bb19f8d417795adb56b6c4d25da6b26c5")
-// 	unitizeArgs.OwnerSigs = [][]byte{ownerSig}
-// 	unitizeArgs.PopcodeSig = generateUnitizeSig(counterSeed, unitizeArgs.DestAddress, 0, []int{10}, "Test Unitize", "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20")
-// 	unitizeArgsBytes, _ := proto.Marshal(&unitizeArgs)
-// 	unitizeArgsBytesStr := hex.EncodeToString(unitizeArgsBytes)
-
-// 	_, err := stub.MockInvoke("4", "unitize", []string{unitizeArgsBytesStr})
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// }
-
-// func generateUnitizeSig(CounterSeedStr string, destAddr string, outputIdx int, amounts []int, data string, privateKeyStr string) []byte {
-// 	privKeyByte, _ := hex.DecodeString(privateKeyStr)
-
-// 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
-
-// 	message := CounterSeedStr + ":" + destAddr + ":" + data + ":" + strconv.FormatInt(int64(outputIdx), 10)
-
-// 	for _, amount := range amounts {
-// 		message += ":" + strconv.FormatInt(int64(amount), 10)
-// 	}
-// 	mDigest := sha256.Sum256([]byte(message))
-// 	sig, _ := privKey.Sign(mDigest[:])
-// 	return sig.Serialize()
-// }
-
-// func combine(t *testing.T, stub *shim.MockStub, counterSeed string) {
-// 	combineArgs := TuxedoPopsTX.Combine{}
-// 	combineArgs.Type = "Test Combined Asset"
-// 	combineArgs.PopcodePubKey, _ = hex.DecodeString("02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc")
-// 	combineArgs.CreatorPubKey, _ = hex.DecodeString("03cc7d40833fdf46e05a7f86a6c9cf8a697a129fbae0676ad6bad71f163ea22b26")
-// 	// combineArgs.CreatorSig =
-// }
 
 var hexChars = []rune("0123456789abcdef")
 var alpha = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -202,13 +55,14 @@ func randString(n int, kindOfString string) string {
 	return string(b)
 }
 
-func generateRegisterNameSig(name string, data string, privateKeyStr string) (string, error) {
-
-	privKeyByte, _ := hex.DecodeString(privateKeyStr)
-
+func generateRegisterNameSig(ownerName string, data string, privateKeyStr string) (string, error) {
+	privKeyByte, err := hex.DecodeString(privateKeyStr)
+	if err != nil {
+		return "", fmt.Errorf("error decoding hex encoded private key (%s)", privateKeyStr)
+	}
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
 
-	message := name + ":" + data
+	message := ownerName + ":" + data
 	fmt.Println("Signed Message")
 	fmt.Println(message)
 	messageBytes := sha256.Sum256([]byte(message))
@@ -219,16 +73,19 @@ func generateRegisterNameSig(name string, data string, privateKeyStr string) (st
 	return hex.EncodeToString(sig.Serialize()), nil
 }
 
-func generateRegisterThingSig(name string, identities []string, privateKeyStr string) (string, error) {
-
-	privKeyByte, _ := hex.DecodeString(privateKeyStr)
-
+func generateRegisterThingSig(ownerName string, identities []string, spec string, data string, privateKeyStr string) (string, error) {
+	privKeyByte, err := hex.DecodeString(privateKeyStr)
+	if err != nil {
+		return "", fmt.Errorf("error decoding hex encoded private key (%s)", privateKeyStr)
+	}
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
 
-	message := name
+	message := ownerName
 	for _, identity := range identities {
 		message += ":" + identity
 	}
+	message += ":" + data
+	message += ":" + spec
 	fmt.Println("Signed Message")
 	fmt.Println(message)
 	messageBytes := sha256.Sum256([]byte(message))
@@ -239,36 +96,42 @@ func generateRegisterThingSig(name string, identities []string, privateKeyStr st
 	return hex.EncodeToString(sig.Serialize()), nil
 }
 
-// func (stub *MockStub) MockInvoke(uuid string, function string, args []string) ([]byte, error) {
-// 	stub.args = getBytes(function, args)
-// 	stub.MockTransactionStart(uuid)
-// 	bytes, err := stub.cc.Invoke(stub, function, args)
-// 	stub.MockTransactionEnd(uuid)
-// 	return bytes, err
-// }
+func generateRegisterSpecSig(specName string, ownerName string, data string, privateKeyStr string) (string, error) {
+	privKeyByte, err := hex.DecodeString(privateKeyStr)
+	if err != nil {
+		return "", fmt.Errorf("error decoding hex encoded private key (%s)", privateKeyStr)
+	}
+	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
 
-func checkQuery(t *testing.T, stub *shim.MockStub, function string, name string, nonce string, value string) {
+	message := specName + ":" + ownerName + ":" + data
+	fmt.Println("Signed Message")
+	fmt.Println(message)
+	messageBytes := sha256.Sum256([]byte(message))
+	sig, err := privKey.Sign(messageBytes[:])
+	if err != nil {
+		return "", fmt.Errorf("error signing message (%s) with private key (%s)", message, privateKeyStr)
+	}
+	return hex.EncodeToString(sig.Serialize()), nil
+}
+
+func checkQuery(t *testing.T, stub *shim.MockStub, function string, index string, value string) {
 	var err error = nil
 	var bytes []byte
-	if function == "owner" {
-		bytes, err = stub.MockQuery(function, []string{name})
-	} else {
-		fmt.Printf("fuction: %s\n nonce: %s\n", function, nonce)
-		bytes, err = stub.MockQuery(function, []string{nonce})
-	}
+
+	bytes, err = stub.MockQuery(function, []string{index})
 	if err != nil {
-		fmt.Println("Query", name, "failed", err)
+		fmt.Println("Query", index, "failed", err)
 		t.FailNow()
 	}
 	if bytes == nil {
-		fmt.Println("Query", name, "failed to get value")
+		fmt.Println("Query", index, "failed to get value")
 		t.FailNow()
 	}
 	fmt.Printf("\nreturned from query: %s\n\n", bytes)
-	// if string(bytes) != value {
-	// 	fmt.Println("Query value", name, "was not", value, "as expected instead", string(bytes))
-	// 	t.FailNow()
-	// }
+	if string(bytes) != value {
+		fmt.Printf("json string (%s) returned from (%s) function query. Want (%s)", string(bytes), function, value)
+		t.FailNow()
+	}
 }
 
 func checkInit(t *testing.T, stub *shim.MockStub, args []string) {
@@ -279,31 +142,24 @@ func checkInit(t *testing.T, stub *shim.MockStub, args []string) {
 	}
 }
 
-// type RegisterThingTX struct {
-// 	Nonce      []byte   `protobuf:"bytes,1,opt,name=Nonce,proto3" json:"Nonce,omitempty"`
-// 	Identities []string `protobuf:"bytes,2,rep,name=Identities" json:"Identities,omitempty"`
-// 	OwnerName  string   `protobuf:"bytes,3,opt,name=OwnerName" json:"OwnerName,omitempty"`
-// 	Signature  []byte   `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
-// 	Data       string   `protobuf:"bytes,5,opt,name=Data" json:"Data,omitempty"`
-// }
+//register an owner to ledger
+func registerOwner(t *testing.T, stub *shim.MockStub, name string, data string,
+	privateKeyString string, pubKeyString string) {
 
-//Puts an owner state to ledger
-func registerOwner(t *testing.T, stub *shim.MockStub, name string, privateKey string, pubKey string, data string) {
 	registerName := IOTRegistryTX.RegisterIdentityTX{}
-	// registerNameArgs.Address = "74ded2036e988fc56e3cff77a40c58239591e921"
 	registerName.OwnerName = name
-	pubKeyBytes, err := hex.DecodeString(pubKey)
+	pubKeyBytes, err := hex.DecodeString(pubKeyString)
 	if err != nil {
 		fmt.Println(err)
 	}
 	registerName.PubKey = pubKeyBytes
 	registerName.Data = data
 
-	hexOwnerSig, err := generateRegisterNameSig(registerName.OwnerName, registerName.Data, privateKey)
+	//create signature
+	hexOwnerSig, err := generateRegisterNameSig(registerName.OwnerName, registerName.Data, privateKeyString)
 	if err != nil {
 		fmt.Println(err)
 	}
-
 	registerName.Signature, err = hex.DecodeString(hexOwnerSig)
 	if err != nil {
 		fmt.Println(err)
@@ -316,29 +172,19 @@ func registerOwner(t *testing.T, stub *shim.MockStub, name string, privateKey st
 	}
 }
 
-type RegisterThingTX struct {
-	Nonce      []byte   `protobuf:"bytes,1,opt,name=Nonce,proto3" json:"Nonce,omitempty"`
-	Identities []string `protobuf:"bytes,2,rep,name=Identities" json:"Identities,omitempty"`
-	OwnerName  string   `protobuf:"bytes,3,opt,name=OwnerName" json:"OwnerName,omitempty"`
-	Signature  []byte   `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
-	Data       string   `protobuf:"bytes,5,opt,name=Data" json:"Data,omitempty"`
-}
+//registers a thing to ledger
+func registerThing(t *testing.T, stub *shim.MockStub, nonce []byte, identities []string,
+	name string, spec string, data string, privateKeyString string) {
 
-func registerThing(t *testing.T, stub *shim.MockStub, nonce []byte, identities []string, name string,
-	privateKey string, pubKey string, data string) {
 	registerThing := IOTRegistryTX.RegisterThingTX{}
 
 	registerThing.Nonce = nonce
 	registerThing.Identities = identities
 	registerThing.OwnerName = name
+	registerThing.Spec = spec
 
-	// pubKeyBytes, err := hex.DecodeString(pubKey)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// pubKeyBytes = nil
-
-	hexThingSig, err := generateRegisterThingSig(name, identities, privateKey)
+	//create signature
+	hexThingSig, err := generateRegisterThingSig(name, identities, spec, data, privateKeyString)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -356,58 +202,93 @@ func registerThing(t *testing.T, stub *shim.MockStub, nonce []byte, identities [
 	}
 }
 
+//registers a spec to ledger
+func registerSpec(t *testing.T, stub *shim.MockStub, specName string, ownerName string,
+	data string, privateKeyString string) {
+
+	registerSpec := IOTRegistryTX.RegisterSpecTX{}
+
+	registerSpec.SpecName = specName
+	registerSpec.OwnerName = ownerName
+	registerSpec.Data = data
+
+	//create signature
+	hexSpecSig, err := generateRegisterSpecSig(specName, ownerName, data, privateKeyString)
+	if err != nil {
+		fmt.Println(err)
+	}
+	registerSpec.Signature, err = hex.DecodeString(hexSpecSig)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	registerSpecBytes, err := proto.Marshal(&registerSpec)
+	registerSpecBytesStr := hex.EncodeToString(registerSpecBytes)
+	_, err = stub.MockInvoke("3", "registerSpec", []string{registerSpecBytesStr})
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func newPrivateKeyString() (string, error) {
+	privKey, err := btcec.NewPrivateKey(btcec.S256())
+	if err != nil {
+		return "", fmt.Errorf("Error generating private key\n")
+	}
+	privKeyBytes := privKey.Serialize()
+	privKeyString := hex.EncodeToString(privKeyBytes)
+	return privKeyString, nil
+}
+
+func getPubKeyString(privKeyString string) (string, error) {
+	privKeyBytes, err := hex.DecodeString(privKeyString)
+	if err != nil {
+		return "", fmt.Errorf("error decoding private key string (%s)", privKeyString)
+	}
+	_, pubKey := btcec.PrivKeyFromBytes(btcec.S256(), privKeyBytes)
+	pubKeyBytes := pubKey.SerializeCompressed()
+	pubkKeyString := hex.EncodeToString(pubKeyBytes)
+	return pubkKeyString, nil
+}
+
 func TestIOTRegistryChaincode(t *testing.T) {
+	//testing private and public key generation
+	privKeyString, err := newPrivateKeyString()
+	if err != nil {
+		fmt.Println(err)
+	}
+	pubKeyString, err := getPubKeyString(privKeyString)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf("new privKey: (%s)\nnew pubKey: %s\n", privKeyString, pubKeyString)
+
+	//declaring and initializing variables for all tests
 	bst := new(IOTRegistry)
-
 	stub := shim.NewMockStub("IOTRegistry", bst)
-	// checkInit(t, stub, []string{"Hello World"})
-	// stub.MockInvoke("1", "registerName", "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc")
-	// bst := new(IOTRegistry)
-	// stub := shim.NewMockStub("tuxedoPops", bst)
 
-	registerOwner(t, stub, "Alice",
+	//test register owner
+	registerOwner(t, stub, "Alice", "Test Data",
 		/*private key: */ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20",
-		/*public key: */ "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc", "Test Data")
+		/*public key: */ "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc")
+	checkQuery(t, stub, "owner", "Alice", `{"OwnerName":"Alice","Pubkey":"AspKjH3FCQ+STN4iZK8kDXb21YpdLRXIxfWdlccL2eTc"}`)
 
-	checkQuery(t, stub, "owner", "Alice", "", `""`)
-
+	//test register thing
 	nonceString := randString(32, "hex")
 	fmt.Printf("nonce:%s\n", nonceString)
 	nonceBytes, err := hex.DecodeString(nonceString)
 	if err != nil {
 		fmt.Printf("error decoding nonce hex string in TestIOTRegistry Chaincode: %v", err)
 	}
-
+	spec := "Test spec"
 	identities := []string{"Foo", "Bar"}
 	fmt.Printf("len identities: %d\n", len(identities))
-	registerThing(t, stub, nonceBytes, identities, "Alice",
-		/*private key: */ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20",
-		/*public key: */ "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc", "Test Data")
+	registerThing(t, stub, nonceBytes, identities, "Alice", spec, "Test Data",
+		/*private key: */ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20")
+	checkQuery(t, stub, "thing", nonceString, `{"Alias":["Foo","Bar"],"OwnerName":"Alice","Data":"Test Data","Spec":"Test spec"}`)
 
-	checkQuery(t, stub, "thing", "", nonceString, `""`)
-	// registerThing := IOTRegistryTX.RegisterThingTX{}
-
-	// registerThing.Identities = []string
-
-	// fmt.Println(len(registerThing.Identities))
-	//json.marshal
-
-	/*define nonce
-	create Identities, a string, which must each exist on ledger
-	define OwnerName
-	define sig...require public and private key
-	define Data....not sure what will go in here
-	*/
-
-	// checkInit(t, stub, []string{"Hello World"})
-	// checkQuery(t, stub, "74ded2036e988fc56e3cff77a40c58239591e921", `{"Address":"74ded2036e988fc56e3cff77a40c58239591e921","Counter":"af5eef44907ccdcc33051d035f32f42de0d093fac2fd9d15923448f6af46bc43","Outputs":null}`)
-	// mint(t, stub, "af5eef44907ccdcc33051d035f32f42de0d093fac2fd9d15923448f6af46bc43")
-	// checkQuery(t, stub, "74ded2036e988fc56e3cff77a40c58239591e921", `{"Address":"74ded2036e988fc56e3cff77a40c58239591e921","Counter":"e91d1eab53d597e8e18bb9ebbbaec66d08187d7e14a4a58c8782610ce7c7a74b","Outputs":["{\"Owners\":null,\"Threshold\":0,\"Data\":\"Test Data\",\"Type\":\"Test Asset\",\"PrevCounter\":\"af5eef44907ccdcc33051d035f32f42de0d093fac2fd9d15923448f6af46bc43\",\"Creator\":\"03cc7d40833fdf46e05a7f86a6c9cf8a697a129fbae0676ad6bad71f163ea22b26\",\"Amount\":10}"]}`)
-	// mint(t, stub, "e91d1eab53d597e8e18bb9ebbbaec66d08187d7e14a4a58c8782610ce7c7a74b")
-	// checkQuery(t, stub, "74ded2036e988fc56e3cff77a40c58239591e921", `{"Address":"74ded2036e988fc56e3cff77a40c58239591e921","Counter":"1adb7c0c1b464fb45860355bf8e711312c608d01202197e58116a424f74af254","Outputs":["{\"Owners\":null,\"Threshold\":0,\"Data\":\"Test Data\",\"Type\":\"Test Asset\",\"PrevCounter\":\"af5eef44907ccdcc33051d035f32f42de0d093fac2fd9d15923448f6af46bc43\",\"Creator\":\"03cc7d40833fdf46e05a7f86a6c9cf8a697a129fbae0676ad6bad71f163ea22b26\",\"Amount\":10}","{\"Owners\":null,\"Threshold\":0,\"Data\":\"Test Data\",\"Type\":\"Test Asset\",\"PrevCounter\":\"e91d1eab53d597e8e18bb9ebbbaec66d08187d7e14a4a58c8782610ce7c7a74b\",\"Creator\":\"03cc7d40833fdf46e05a7f86a6c9cf8a697a129fbae0676ad6bad71f163ea22b26\",\"Amount\":10}"]}`)
-	// possess(t, stub, "1adb7c0c1b464fb45860355bf8e711312c608d01202197e58116a424f74af254", 1)
-	// checkQuery(t, stub, "74ded2036e988fc56e3cff77a40c58239591e921", `{"Address":"74ded2036e988fc56e3cff77a40c58239591e921","Counter":"d3e41e748a7094cc520319623479f97dfb6aae0ea915940b72926384fe8d0e8c","Outputs":["{\"Owners\":null,\"Threshold\":0,\"Data\":\"Test Data\",\"Type\":\"Test Asset\",\"PrevCounter\":\"af5eef44907ccdcc33051d035f32f42de0d093fac2fd9d15923448f6af46bc43\",\"Creator\":\"03cc7d40833fdf46e05a7f86a6c9cf8a697a129fbae0676ad6bad71f163ea22b26\",\"Amount\":10}","{\"Owners\":[\"0278b76afbefb1e1185bc63ed1a17dd88634e0587491f03e9a8d2d25d9ab289ee7\"],\"Threshold\":1,\"Data\":\"Test possess\",\"Type\":\"Test Asset\",\"PrevCounter\":\"1adb7c0c1b464fb45860355bf8e711312c608d01202197e58116a424f74af254\",\"Creator\":\"03cc7d40833fdf46e05a7f86a6c9cf8a697a129fbae0676ad6bad71f163ea22b26\",\"Amount\":10}"]}`)
-	// unitize(t, stub, "d3e41e748a7094cc520319623479f97dfb6aae0ea915940b72926384fe8d0e8c")
-	// checkQuery(t, stub, "74ded2036e988fc56e3cff77a40c58239591e921", `{"Address":"74ded2036e988fc56e3cff77a40c58239591e921","Counter":"afab4e267a433fe306d1da4608629ce9a280bde98f7004ff883383d65b9f5948","Outputs":["{\"Owners\":[\"0278b76afbefb1e1185bc63ed1a17dd88634e0587491f03e9a8d2d25d9ab289ee7\"],\"Threshold\":1,\"Data\":\"Test possess\",\"Type\":\"Test Asset\",\"PrevCounter\":\"1adb7c0c1b464fb45860355bf8e711312c608d01202197e58116a424f74af254\",\"Creator\":\"03cc7d40833fdf46e05a7f86a6c9cf8a697a129fbae0676ad6bad71f163ea22b26\",\"Amount\":10}"]}`)
-	// checkQuery(t, stub, "10734390011641497f489cb475743b8e50d429bb", `{"Address":"10734390011641497f489cb475743b8e50d429bb","Counter":"83b298acdf5d7231597ffb776c8f027877ca89cbafa7675a3f177619b0a9ad74","Outputs":["{\"Owners\":null,\"Threshold\":0,\"Data\":\"Test Unitize\",\"Type\":\"Test Asset\",\"PrevCounter\":\"d3e41e748a7094cc520319623479f97dfb6aae0ea915940b72926384fe8d0e8c\",\"Creator\":\"03cc7d40833fdf46e05a7f86a6c9cf8a697a129fbae0676ad6bad71f163ea22b26\",\"Amount\":10}"]}`)
+	// test register spec
+	registerSpec(t, stub, "Test spec 1", "Alice", "Test data",
+		/*private key: */ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20")
+	checkQuery(t, stub, "spec", "Test spec 1", `{"OwnerName":"Alice","Data":"Test data"}`)
 }

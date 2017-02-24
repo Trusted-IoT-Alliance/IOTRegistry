@@ -7,12 +7,19 @@ message RegisterThingTX {
     string OwnerName =3;
     bytes Signature =4;
     string Data =5;
+    string Spec =6;
 }
 
 message RegisterIdentityTX{
     string OwnerName =1;
     bytes PubKey =2;
-    string Data = 3;
     bytes Signature =4;
+    string Data =3;
+}
 
+message RegisterSpecTX{
+	string SpecName =1;
+	string OwnerName =2;
+	bytes Signature =3;
+    string Data =4;
 }

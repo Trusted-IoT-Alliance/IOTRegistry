@@ -12,6 +12,7 @@ It has these top-level messages:
 	Identities
 	Alias
 	Things
+	Spec
 */
 package IOTRegistryStore
 
@@ -45,8 +46,18 @@ type Things struct {
 	Alias     []string `protobuf:"bytes,1,rep,name=Alias" json:"Alias,omitempty"`
 	OwnerName string   `protobuf:"bytes,2,opt,name=OwnerName" json:"OwnerName,omitempty"`
 	Data      string   `protobuf:"bytes,3,opt,name=Data" json:"Data,omitempty"`
+	Spec      string   `protobuf:"bytes,4,opt,name=Spec" json:"Spec,omitempty"`
 }
 
 func (m *Things) Reset()         { *m = Things{} }
 func (m *Things) String() string { return proto.CompactTextString(m) }
 func (*Things) ProtoMessage()    {}
+
+type Spec struct {
+	OwnerName string `protobuf:"bytes,2,opt,name=OwnerName" json:"OwnerName,omitempty"`
+	Data      string `protobuf:"bytes,1,opt,name=Data" json:"Data,omitempty"`
+}
+
+func (m *Spec) Reset()         { *m = Spec{} }
+func (m *Spec) String() string { return proto.CompactTextString(m) }
+func (*Spec) ProtoMessage()    {}
