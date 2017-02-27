@@ -21,8 +21,8 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	proto "github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
-	"github.com/skuchain/IOTRegistry/IOTRegistryStore"
-	IOTRegistryTX "github.com/skuchain/IOTRegistry/IOTRegistryTX"
+	"github.com/zmanian/IOTRegistry/IOTRegistryStore"
+	IOTRegistryTX "github.com/zmanian/IOTRegistry/IOTRegistryTX"
 )
 
 // This chaincode implements the ledger operations for the proofchaincode

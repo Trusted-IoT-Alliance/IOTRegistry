@@ -13,7 +13,7 @@ import (
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 
 	"github.com/btcsuite/btcd/btcec"
-	IOTRegistryTX "github.com/skuchain/IOTRegistry/IOTRegistryTX"
+	IOTRegistryTX "github.com/zmanian/IOTRegistry/IOTRegistryTX"
 )
 
 /*
