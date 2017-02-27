@@ -32,18 +32,6 @@ type IOTRegistry struct {
 }
 
 func (t *IOTRegistry) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	if len(args) < 1 {
-		fmt.Printf("Invalid Init Arg")
-		return nil, fmt.Errorf("Invalid Init Arg: (%s)", args)
-	}
-
-	//not sure if next seven lines are necessary
-	counterSeed := sha256.Sum256([]byte(args[0]))
-	err := stub.PutState("CounterSeed", counterSeed[:])
-	if err != nil {
-		fmt.Printf("Error initializing CounterSeed")
-		return nil, fmt.Errorf("Error initializing CounterSeed: (%s)", counterSeed)
-	}
 	return nil, nil
 }
 
