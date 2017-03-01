@@ -76,12 +76,12 @@ func generateRegisterNameSig(ownerName string, data string, privateKeyStr string
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
 
 	message := ownerName + ":" + data
-	fmt.Printf("\nsigned message: (%s)\n\n", message)
 	messageBytes := sha256.Sum256([]byte(message))
 	sig, err := privKey.Sign(messageBytes[:])
 	if err != nil {
 		return "", fmt.Errorf("error signing message (%s) with private key (%s)", message, privateKeyStr)
 	}
+	// fmt.Printf("\n\nNAME\nsigned message: (%s)\nprivate key (%s)\nsignature (%s)\n\n", message, privateKeyStr, hex.EncodeToString(sig.Serialize()))
 	return hex.EncodeToString(sig.Serialize()), nil
 }
 
@@ -97,12 +97,12 @@ func generateRegisterThingSig(ownerName string, identities []string, spec string
 	}
 	message += ":" + data
 	message += ":" + spec
-	fmt.Printf("\nsigned message: (%s)\n\n", message)
 	messageBytes := sha256.Sum256([]byte(message))
 	sig, err := privKey.Sign(messageBytes[:])
 	if err != nil {
 		return "", fmt.Errorf("error signing message (%s) with private key (%s)", message, privateKeyStr)
 	}
+	// fmt.Printf("\n\nTHING\nsigned message: (%s)\nprivate key (%s)\nsignature (%s)\n\n", message, privateKeyStr, hex.EncodeToString(sig.Serialize()))
 	return hex.EncodeToString(sig.Serialize()), nil
 }
 
@@ -114,12 +114,13 @@ func generateRegisterSpecSig(specName string, ownerName string, data string, pri
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
 
 	message := specName + ":" + ownerName + ":" + data
-	fmt.Printf("\nsigned message: (%s)\n\n", message)
 	messageBytes := sha256.Sum256([]byte(message))
 	sig, err := privKey.Sign(messageBytes[:])
 	if err != nil {
 		return "", fmt.Errorf("error signing message (%s) with private key (%s)", message, privateKeyStr)
 	}
+	// fmt.Printf("\n\nSPEC\nsigned message: (%s)\nprivate key (%s)\nsignature (%s)\n\n", message, privateKeyStr, hex.EncodeToString(sig.Serialize()))
+
 	return hex.EncodeToString(sig.Serialize()), nil
 }
 
@@ -153,7 +154,6 @@ func registerOwner(t *testing.T, stub *shim.MockStub, name string, data string,
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
-	fmt.Printf("\nsig: (%s)\n\n", hexOwnerSig)
 
 	registerNameBytes, err := proto.Marshal(&registerName)
 	registerNameBytesStr := hex.EncodeToString(registerNameBytes)
@@ -180,7 +180,6 @@ func registerThing(t *testing.T, stub *shim.MockStub, nonce []byte, identities [
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
-	fmt.Printf("\nsig: (%s)\n\n", hexThingSig)
 	registerThing.Signature, err = hex.DecodeString(hexThingSig)
 	if err != nil {
 		return fmt.Errorf("%v", err)
@@ -211,7 +210,6 @@ func registerSpec(t *testing.T, stub *shim.MockStub, specName string, ownerName 
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
-	fmt.Printf("\nsig: (%s)\n\n", hexSpecSig)
 
 	registerSpec.Signature, err = hex.DecodeString(hexSpecSig)
 	if err != nil {

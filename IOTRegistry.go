@@ -300,20 +300,6 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 		ownerSig := specArgs.Signature
 
-		/*ownerRegistration, a struct of type IOTRegistryStore.Identities, has a field specName.
-		should we make sure that the specName input as an argument to invoke spec is equal to this value?
-		That is, should we check that specArgs.SpecName == ownerRegistration.SpecName?
-		for example:
-		if specArgs.SpecName != ownerRegistration.SpecName {
-			return nil, fmt.Errorf("mismatched SpecName values (%s) and (%s)",
-									specArgs.SpecName, ownerRegistration.SpecName)
-		}
-
-		Alternatively, should we just retrieve specName from the ownerRegistration on the ledger?
-		If we did this, there would be no need for a field in ownerRegistration for specName.
-			-whether a user should be able to register more than one spec seems relevant to this question.
-				-if a user can register multiple specs, maybe we can make this a slice of strings.
-		*/
 		//TODO review later
 		message := specArgs.SpecName + ":" + specArgs.OwnerName + ":" + specArgs.Data
 		err = verify(ownerPubKeyBytes, ownerSig, message)
