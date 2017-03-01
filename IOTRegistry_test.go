@@ -31,7 +31,6 @@ Private Key 3: 166cc93d9eadb573b329b5993b9671f1521679cea90fe52e398e66c1d6373abf
 Private Key 4: 01b756f231c72747e024ceee41703d9a7e3ab3e68d9b73d264a0196bd90acedf
  Public Key 4: 020f2b95263c4b3be740b7b3fda4c2f4113621c1a7a360713a2540eeb808519cd6
 
-
 Unused:
 
 Public Key: 02cb6d65b04c4b84502015f918fe549e95cad4f3b899359a170d4d7d438363c0ce
@@ -46,7 +45,6 @@ Private Key: 7142c92e6eba38de08980eeb55b8c98bb19f8d417795adb56b6c4d25da6b26c5
 Owner2 key
 Public Key: 02e138b25db2e74c54f8ca1a5cf79e2d1ed6af5bd1904646e7dc08b6d7b0d12bfd
 Private Key: b18b7d3082b3ff9438a7bf9f5f019f8a52fb64647ea879548b3ca7b551eefd65
-
 */
 
 var hexChars = []rune("0123456789abcdef")
@@ -78,6 +76,7 @@ func generateRegisterNameSig(ownerName string, data string, privateKeyStr string
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
 
 	message := ownerName + ":" + data
+	fmt.Printf("\nsigned message: (%s)\n\n", message)
 	messageBytes := sha256.Sum256([]byte(message))
 	sig, err := privKey.Sign(messageBytes[:])
 	if err != nil {
@@ -92,13 +91,13 @@ func generateRegisterThingSig(ownerName string, identities []string, spec string
 		return "", fmt.Errorf("error decoding hex encoded private key (%s)", privateKeyStr)
 	}
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
-
 	message := ownerName
 	for _, identity := range identities {
 		message += ":" + identity
 	}
 	message += ":" + data
 	message += ":" + spec
+	fmt.Printf("\nsigned message: (%s)\n\n", message)
 	messageBytes := sha256.Sum256([]byte(message))
 	sig, err := privKey.Sign(messageBytes[:])
 	if err != nil {
@@ -115,6 +114,7 @@ func generateRegisterSpecSig(specName string, ownerName string, data string, pri
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
 
 	message := specName + ":" + ownerName + ":" + data
+	fmt.Printf("\nsigned message: (%s)\n\n", message)
 	messageBytes := sha256.Sum256([]byte(message))
 	sig, err := privKey.Sign(messageBytes[:])
 	if err != nil {
@@ -153,6 +153,8 @@ func registerOwner(t *testing.T, stub *shim.MockStub, name string, data string,
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
+	fmt.Printf("\nsig: (%s)\n\n", hexOwnerSig)
+
 	registerNameBytes, err := proto.Marshal(&registerName)
 	registerNameBytesStr := hex.EncodeToString(registerNameBytes)
 	_, err = stub.MockInvoke("3", "registerOwner", []string{registerNameBytesStr})
@@ -178,6 +180,7 @@ func registerThing(t *testing.T, stub *shim.MockStub, nonce []byte, identities [
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
+	fmt.Printf("\nsig: (%s)\n\n", hexThingSig)
 	registerThing.Signature, err = hex.DecodeString(hexThingSig)
 	if err != nil {
 		return fmt.Errorf("%v", err)
@@ -208,6 +211,8 @@ func registerSpec(t *testing.T, stub *shim.MockStub, specName string, ownerName 
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
+	fmt.Printf("\nsig: (%s)\n\n", hexSpecSig)
+
 	registerSpec.Signature, err = hex.DecodeString(hexSpecSig)
 	if err != nil {
 		return fmt.Errorf("%v", err)
@@ -347,34 +352,34 @@ func TestIOTRegistryChaincode(t *testing.T) {
 	if err != nil {
 		t.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err)
 	}
-	nonceBytes2, err := hex.DecodeString("bf5c97d2d2a313e4f95957818a7b3edc")
-	if err != nil {
-		t.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err)
-	}
-	nonceBytes3, err := hex.DecodeString("a492f2b8a67697c4f91d9b9332e82347")
-	if err != nil {
-		t.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err)
-	}
-	nonceBytes4, err := hex.DecodeString("83de17bd7a25e0a9f6813976eadf26de")
-	if err != nil {
-		t.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err)
-	}
+	// nonceBytes2, err := hex.DecodeString("bf5c97d2d2a313e4f95957818a7b3edc")
+	// if err != nil {
+	// 	t.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err)
+	// }
+	// nonceBytes3, err := hex.DecodeString("a492f2b8a67697c4f91d9b9332e82347")
+	// if err != nil {
+	// 	t.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err)
+	// }
+	// nonceBytes4, err := hex.DecodeString("83de17bd7a25e0a9f6813976eadf26de")
+	// if err != nil {
+	// 	t.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err)
+	// }
 	var registryTestsSuccess = []registryTest{
 		{ /*private key  1*/ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20",
 			/*public key 1*/ "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc",
 			"Alice", "test data", nonceBytes1, "test spec", []string{"Foo", "Bar"}},
 
-		{ /*private key  2*/ "246d4fa59f0baa3329d3908659936ac2ac9c3539dc925977759cffe3c6316e19",
-			/*public key 2*/ "03442b817ad2154766a8f5192fc5a7506b7e52cdbf4fcf8e1bc33764698443c3c9",
-			"Gerald", "test data 1", nonceBytes2, "test spec 2", []string{"one", "two", "three"}},
+		// { /*private key  2*/ "246d4fa59f0baa3329d3908659936ac2ac9c3539dc925977759cffe3c6316e19",
+		// 	/*public key 2*/ "03442b817ad2154766a8f5192fc5a7506b7e52cdbf4fcf8e1bc33764698443c3c9",
+		// 	"Gerald", "test data 1", nonceBytes2, "test spec 2", []string{"one", "two", "three"}},
 
-		{ /*private key  3*/ "166cc93d9eadb573b329b5993b9671f1521679cea90fe52e398e66c1d6373abf",
-			/*public key 3*/ "02242a1c19bc831cd95a9e5492015043250cbc17d0eceb82612ce08736b8d753a6",
-			"Bob", "test data 2", nonceBytes3, "test spec 3", []string{"ident4", "ident5", "ident6"}},
+		// { /*private key  3*/ "166cc93d9eadb573b329b5993b9671f1521679cea90fe52e398e66c1d6373abf",
+		// 	/*public key 3*/ "02242a1c19bc831cd95a9e5492015043250cbc17d0eceb82612ce08736b8d753a6",
+		// 	"Bob", "test data 2", nonceBytes3, "test spec 3", []string{"ident4", "ident5", "ident6"}},
 
-		{ /*private key  4*/ "01b756f231c72747e024ceee41703d9a7e3ab3e68d9b73d264a0196bd90acedf",
-			/*public key 4*/ "020f2b95263c4b3be740b7b3fda4c2f4113621c1a7a360713a2540eeb808519cd6",
-			"Cassandra", "test data 3", nonceBytes4, "test spec 4", []string{"ident7", "ident8", "ident9"}},
+		// { /*private key  4*/ "01b756f231c72747e024ceee41703d9a7e3ab3e68d9b73d264a0196bd90acedf",
+		// 	/*public key 4*/ "020f2b95263c4b3be740b7b3fda4c2f4113621c1a7a360713a2540eeb808519cd6",
+		// 	"Cassandra", "test data 3", nonceBytes4, "test spec 4", []string{"ident7", "ident8", "ident9"}},
 	}
 	for _, test := range registryTestsSuccess {
 		err := registerOwner(t, stub, test.ownerName, test.data, test.privateKeyString, test.pubKeyString)

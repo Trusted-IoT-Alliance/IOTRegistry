@@ -62,7 +62,7 @@ func verify(pubKeyBytes []byte, sigBytes []byte, message string) (err error) {
 
 func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	if len(args) == 0 {
-		fmt.Println("Insufficient arguments found\n")
+		fmt.Printf("Insufficient arguments found\n")
 		return nil, fmt.Errorf("Insufficient arguments found\n")
 	}
 	argsBytes, err := hex.DecodeString(args[0])
@@ -136,8 +136,8 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		registerThingArgs := IOTRegistryTX.RegisterThingTX{}
 		err = proto.Unmarshal(argsBytes, &registerThingArgs)
 		if err != nil {
-			fmt.Printf("Invalid argument expected RegisterThingTX protocol buffer %s\n", err.Error())
-			return nil, fmt.Errorf("Invalid argument expected RegisterThingTX protocol buffer %s\n", err.Error())
+			fmt.Printf("Invalid argument expected RegisterThingTX protocol buffer. Err: (%s)\n", err.Error())
+			return nil, fmt.Errorf("Invalid argument expected RegisterThingTX protocol buffer. Err: (%s)\n", err.Error())
 		}
 		if len(registerThingArgs.OwnerName) == 0 {
 			fmt.Printf("length of OwnerName (%s) is zero\n", registerThingArgs.OwnerName)
@@ -168,8 +168,8 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		//check if owner is valid id (name exists in registry)
 		checkIDBytes, err := stub.GetState("OwnerName: " + registerThingArgs.OwnerName)
 		if err != nil {
-			fmt.Printf("Failed to look up Owner Name (%s) \n", registerThingArgs.OwnerName)
-			return nil, fmt.Errorf("Failed to look up Owner Name (%s) \n", registerThingArgs.OwnerName)
+			fmt.Printf("Failed to look up OwnerName (%s) \n", registerThingArgs.OwnerName)
+			return nil, fmt.Errorf("Failed to look up OwnerName (%s) \n", registerThingArgs.OwnerName)
 		}
 
 		//if owner is not registered name
@@ -179,16 +179,17 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//check if any identities exist
+		//we're checking if any identities are registered as ownernames but not if they are registered as aliases
 		for _, identity := range registerThingArgs.Identities {
 			aliasCheckBytes, err := stub.GetState("OwnerName: " + identity)
 			if err != nil {
 				fmt.Printf("Could not get identity: (%s) State\n", identity)
-				return nil, fmt.Errorf("Could not get Identity State\n")
+				return nil, fmt.Errorf("Could not get identity: (%s) State\n", identity)
 			}
 			//throw error if any of the identities already exist
 			if len(aliasCheckBytes) != 0 {
-				fmt.Printf("Identity/Ownername: (%s) is already in registry\n", identity)
-				return nil, fmt.Errorf("Identity/Ownername: (%s) is already in registry\n", identity)
+				fmt.Printf("Ownername: (%s) is already in registry\n", identity)
+				return nil, fmt.Errorf("Ownername: (%s) is already in registry\n", identity)
 			}
 		}
 
@@ -196,8 +197,8 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		ownerRegistration := IOTRegistryStore.Identities{}
 		err = proto.Unmarshal(checkIDBytes, &ownerRegistration)
 		if err != nil {
-			fmt.Printf("Error unmarshalling owner name state (%v)", err.Error())
-			return nil, fmt.Errorf("Error unmarshalling owner name state (%v)", err.Error())
+			fmt.Printf("Error unmarshalling OwnerName (%s) state (%v)", registerThingArgs.OwnerName, err.Error())
+			return nil, fmt.Errorf("Error unmarshalling OwnerName (%s) state (%v)", registerThingArgs.OwnerName, err.Error())
 		}
 
 		ownerPubKeyBytes := ownerRegistration.Pubkey
@@ -271,7 +272,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 		//if spec already exists
 		if len(specNameCheckBytes) != 0 {
-			fmt.Println("SpecName is unavailable\n")
+			fmt.Printf("SpecName (%s) is unavailable\n", specArgs.SpecName)
 			return nil, fmt.Errorf("SpecName (%s) is unavailable\n", specArgs.SpecName)
 		}
 
@@ -407,7 +408,6 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 			return nil, err
 		}
 
-		//Owner does not exist \/
 		if len(ownerBytes) == 0 {
 			return nil, fmt.Errorf("OwnerName (%s) does not exist\n", ownerName)
 		}
