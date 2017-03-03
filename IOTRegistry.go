@@ -23,16 +23,20 @@ import (
 	IOTRegistryTX "github.com/zmanian/IOTRegistry/IOTRegistryTX"
 )
 
-// This chaincode implements the ledger operations for the proofchaincode
-
-// ProofChainCode example simple Chaincode implementation
 type IOTRegistry struct {
 }
 
+/*
+	Init is a required function in which necessary setup operations are performed.
+	In this case, no such operations are needed.
+*/
 func (t *IOTRegistry) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	return nil, nil
 }
 
+/*
+	verifies an input signature against input public key and message.
+*/
 func verify(pubKeyBytes []byte, sigBytes []byte, message string) (err error) {
 	//deserialize public key bytes into a public key object
 	creatorKey, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
@@ -60,6 +64,13 @@ func verify(pubKeyBytes []byte, sigBytes []byte, message string) (err error) {
 	return nil
 }
 
+/*
+	Invoke is the central mechanism in hyperledger for creating transactions and putting them to the ledger.
+	This function takes as arguments
+	|		a chaincode interface, called "stub"
+	|		a string which dictates which function to perform,
+	|		a slice of strings "args" that accord with some protobuf specification
+*/
 func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	if len(args) == 0 {
 		fmt.Printf("Insufficient arguments found\n")
@@ -72,6 +83,11 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 	}
 
 	switch function {
+	/*
+		registerOwner puts an "OwnerName: <OwnerName>" state to the ledger, indexed by the ownerName.
+		TX struct: 		RegisterOwnerTX
+		Store struct: 	Owner
+	*/
 	case "registerOwner":
 		//declare and initialize RegisterIdentity struct
 		registerNameArgs := IOTRegistryTX.RegisterIdentityTX{}
@@ -131,7 +147,15 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			fmt.Printf("error putting OwnerName (%s) to ledger: (%v)\n", registerNameArgs.OwnerName, err.Error())
 			return nil, fmt.Errorf("error putting OwnerName (%s) to ledger: (%v)\n", registerNameArgs.OwnerName, err.Error())
 		}
-
+	/*
+		registerThing does, essentially, two things.
+		1.	puts a "Thing: <Nonce>" state to the ledger, indexed by the nonce.
+		|		-a thing contains a string slice of identities, an OwnerName, an arbitrary string of data, and the name of a specification.
+		2.	for each element of the Identities string slice, puts an "Alias: <identity>" state to the ledger, indexed by identity.
+		|		-an Alias contains a nonce, which can be used to access its parent "thing"
+		TX struct: 		RegisterThingTX
+		Store structs: 	Things, Alias
+	*/
 	case "registerThing":
 		registerThingArgs := IOTRegistryTX.RegisterThingTX{}
 		err = proto.Unmarshal(argsBytes, &registerThingArgs)
@@ -246,6 +270,11 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			fmt.Printf("Error putting thing state :(%v)", err.Error())
 			return nil, fmt.Errorf("Error putting thing state :(%v)", err.Error())
 		}
+	/*
+		registerSpec puts a "Spec: <SpecName>" state to the ledger, indexed by the spec name.
+		TX struct: 		RegisterSpecTX
+		Store structs: 	Spec
+	*/
 	case "registerSpec":
 		specArgs := IOTRegistryTX.RegisterSpecTX{}
 		err = proto.Unmarshal(argsBytes, &specArgs)
@@ -323,6 +352,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 	return nil, nil
 }
 
+/* declares, initializes, and marshalls struct containing owner information to JSON */
 func ownerNameToJSON(ownerName string, pubKey []byte) ([]byte, error) {
 	type JSONIdentities struct {
 		OwnerName string
@@ -339,47 +369,17 @@ func ownerNameToJSON(ownerName string, pubKey []byte) ([]byte, error) {
 	return jsonstring, nil
 }
 
-// func ThingToJSON() []byte {
-// 	type JSONThings struct {
-// 		Alias     []string
-// 		OwnerName string
-// 		Data      string
-// 		SpecName  string
-// 	}
-// 	jsonThing := JSONThings{}
-// 	jsonThing.Address = p.Address
-// 	jsonThing.Counter = hex.EncodeToString(p.Counter)
-// 	for _, o := range p.Outputs {
-// 		jsonThing.Outputs = append(jsonThing.Outputs, string(o.ToJSON()))
-// 	}
-// 	jsonstring, err := json.Marshal(jsonThing)
-// 	if err != nil {
-// 		return nil
-// 	}
-// 	return jsonstring
-// }
-
-// func SpecToJSON(address string, ) []byte {
-// 	type JSONSpec struct {
-// 		OwnerName string
-// 		Data      string
-// 	}
-// 	jsonSpec := JSONSpec{}
-// 	jsonSpec.Address = p.Address
-// 	jsonSpec.Counter = hex.EncodeToString(p.Counter)
-// 	for _, o := range p.Outputs {
-// 		jsonSpec.Outputs = append(jsonSpec.Outputs, string(o.ToJSON()))
-// 	}
-// 	jsonstring, err := json.Marshal(jsonSpec)
-// 	if err != nil {
-// 		return nil
-// 	}
-// 	return jsonstring
-// }
-
+/*
+	Query is a mechanism for requesting information from the ledger. There are three query methods in this chaincode: owner, thing, and spec.
+	Each query will return data as a json formatted slice of bytes
+*/
 func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	// fmt.Printf("function: %s\n", function)
 	switch function {
+	/*
+		An "owner" query requests information stored in the ledger about a particular owner.
+		If the owner is registered, the JSON will contain the owner's name and public key.
+	*/
 	case "owner":
 		if len(args) != 1 {
 			return nil, fmt.Errorf("No argument specified\n")
@@ -404,6 +404,11 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 		}
 		jsonBytes, err := ownerNameToJSON(owner.OwnerName, owner.Pubkey)
 		return jsonBytes, err
+		/*
+			A "thing" query requests information stored in the ledger about a particular thing.
+			Things are indexed by a Nonce, which should be a valid hex string.
+			If the thing is registered, the JSON will contain the owner's list of aliases, owner name, an arbitrary string of data, and a spec name.
+		*/
 	case "thing":
 		if len(args) != 1 {
 			return nil, fmt.Errorf("No argument specified\n")
@@ -426,6 +431,11 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 			return nil, err
 		}
 		return json.Marshal(thing)
+		/*
+			A "spec" query requests information stored in the ledger about a particular specification.
+			Specs are indexed by a SpecName, which is a string.
+			If the spec is registered, the JSON will contain the owner's name and a string of data.
+		*/
 	case "spec":
 		if len(args) != 1 {
 			return nil, fmt.Errorf("no argument specified\n")
