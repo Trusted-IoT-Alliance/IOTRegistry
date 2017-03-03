@@ -8,8 +8,7 @@
 
 syntax ="proto3";
 
-
-message Identities{
+message Owner{
   string OwnerName =1;
   bytes Pubkey = 3;
 }

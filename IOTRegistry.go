@@ -16,23 +16,27 @@ import (
 
 	"crypto/sha256"
 
+	"github.com/InternetofTrustedThings/IOTRegistry/IOTRegistryStore"
+	IOTRegistryTX "github.com/InternetofTrustedThings/IOTRegistry/IOTRegistryTX"
 	"github.com/btcsuite/btcd/btcec"
 	proto "github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
-	"github.com/zmanian/IOTRegistry/IOTRegistryStore"
-	IOTRegistryTX "github.com/zmanian/IOTRegistry/IOTRegistryTX"
 )
 
-// This chaincode implements the ledger operations for the proofchaincode
-
-// ProofChainCode example simple Chaincode implementation
 type IOTRegistry struct {
 }
 
+/*
+	Init is a required function in which necessary setup operations are performed.
+	In this case, no such operations are needed.
+*/
 func (t *IOTRegistry) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	return nil, nil
 }
 
+/*
+	verifies an input signature against input public key and message.
+*/
 func verify(pubKeyBytes []byte, sigBytes []byte, message string) (err error) {
 	//deserialize public key bytes into a public key object
 	creatorKey, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
@@ -41,8 +45,7 @@ func verify(pubKeyBytes []byte, sigBytes []byte, message string) (err error) {
 		return fmt.Errorf("Invalid pubkey key (%s)\n", hex.EncodeToString(pubKeyBytes))
 	}
 
-	//DER is a standard for serialization
-	//parsing DER signature from bitcoin curve into a signature object
+	//parse the DER signature into a signature object
 	signature, err := btcec.ParseDERSignature(sigBytes, btcec.S256())
 	if err != nil {
 		fmt.Printf("Bad Creator signature encoding\n")
@@ -51,7 +54,7 @@ func verify(pubKeyBytes []byte, sigBytes []byte, message string) (err error) {
 
 	messageBytes := sha256.Sum256([]byte(message))
 
-	//try to verify the signature
+	//attempt to verify the signature
 	success := signature.Verify(messageBytes[:], creatorKey)
 	if !success {
 		fmt.Printf("Invalid Creator Signature\n")
@@ -60,6 +63,13 @@ func verify(pubKeyBytes []byte, sigBytes []byte, message string) (err error) {
 	return nil
 }
 
+/*
+	Invoke is the central mechanism in hyperledger for creating transactions and putting them to the ledger.
+	This function takes as arguments
+	|		a chaincode interface, called "stub"
+	|		a string which dictates which function to perform,
+	|		a slice of strings "args" that accord with some protobuf specification
+*/
 func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	if len(args) == 0 {
 		fmt.Printf("Insufficient arguments found\n")
@@ -72,9 +82,14 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 	}
 
 	switch function {
+	/*
+		registerOwner puts an "OwnerName: <name>" state to the ledger, indexed by the ownerName.
+		TX struct: 		RegisterOwnerTX
+		Store struct: 	Register
+	*/
 	case "registerOwner":
 		//declare and initialize RegisterIdentity struct
-		registerNameArgs := IOTRegistryTX.RegisterIdentityTX{}
+		registerNameArgs := IOTRegistryTX.RegisterOwnerTX{}
 		err = proto.Unmarshal(argsBytes, &registerNameArgs)
 		if err != nil {
 			fmt.Printf("Invalid argument expected RegisterNameTX protocol buffer %s\n", err.Error())
@@ -117,7 +132,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//marshall into store type. Then put that variable into the state
-		store := IOTRegistryStore.Identities{}
+		store := IOTRegistryStore.Owner{}
 		store.OwnerName = registerNameArgs.OwnerName
 		store.Pubkey = registerNameArgs.PubKey
 		storeBytes, err := proto.Marshal(&store)
@@ -194,7 +209,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//retrieve state associated with owner name to get public key
-		ownerRegistration := IOTRegistryStore.Identities{}
+		ownerRegistration := IOTRegistryStore.Owner{}
 		err = proto.Unmarshal(checkIDBytes, &ownerRegistration)
 		if err != nil {
 			fmt.Printf("Error unmarshalling OwnerName (%s) state (%v)", registerThingArgs.OwnerName, err.Error())
@@ -290,7 +305,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//retrieve state associated with owner name to get public key
-		ownerRegistration := IOTRegistryStore.Identities{}
+		ownerRegistration := IOTRegistryStore.Owner{}
 		err = proto.Unmarshal(checkIDBytes, &ownerRegistration)
 		if err != nil {
 			return nil, err
@@ -385,7 +400,7 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 			return nil, fmt.Errorf("No argument specified\n")
 		}
 
-		owner := IOTRegistryStore.Identities{}
+		owner := IOTRegistryStore.Owner{}
 
 		ownerName := args[0]
 		ownerBytes, err := stub.GetState("OwnerName: " + ownerName)

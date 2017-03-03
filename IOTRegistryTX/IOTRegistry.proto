@@ -10,7 +10,7 @@ message RegisterThingTX {
     string Spec =6;
 }
 
-message RegisterIdentityTX{
+message RegisterOwnerTX{
     string OwnerName =1;
     bytes PubKey =2;
     bytes Signature =4;

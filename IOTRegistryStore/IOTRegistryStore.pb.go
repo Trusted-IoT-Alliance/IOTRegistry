@@ -9,7 +9,7 @@ It is generated from these files:
 	IOTRegistryStore.proto
 
 It has these top-level messages:
-	Identities
+	Owner
 	Alias
 	Things
 	Spec
@@ -25,14 +25,14 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-type Identities struct {
+type Owner struct {
 	OwnerName string `protobuf:"bytes,1,opt,name=OwnerName" json:"OwnerName,omitempty"`
 	Pubkey    []byte `protobuf:"bytes,3,opt,name=Pubkey,proto3" json:"Pubkey,omitempty"`
 }
 
-func (m *Identities) Reset()         { *m = Identities{} }
-func (m *Identities) String() string { return proto.CompactTextString(m) }
-func (*Identities) ProtoMessage()    {}
+func (m *Owner) Reset()         { *m = Owner{} }
+func (m *Owner) String() string { return proto.CompactTextString(m) }
+func (*Owner) ProtoMessage()    {}
 
 type Alias struct {
 	Nonce []byte `protobuf:"bytes,1,opt,name=Nonce,proto3" json:"Nonce,omitempty"`

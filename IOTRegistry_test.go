@@ -12,8 +12,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 
+	IOTRegistryTX "github.com/InternetofTrustedThings/IOTRegistry/IOTRegistryTX"
 	"github.com/btcsuite/btcd/btcec"
-	IOTRegistryTX "github.com/zmanian/IOTRegistry/IOTRegistryTX"
 )
 
 /*
@@ -136,7 +136,7 @@ func checkInit(t *testing.T, stub *shim.MockStub, args []string) {
 func registerOwner(t *testing.T, stub *shim.MockStub, name string, data string,
 	privateKeyString string, pubKeyString string) error {
 
-	registerName := IOTRegistryTX.RegisterIdentityTX{}
+	registerName := IOTRegistryTX.RegisterOwnerTX{}
 	registerName.OwnerName = name
 	pubKeyBytes, err := hex.DecodeString(pubKeyString)
 	if err != nil {

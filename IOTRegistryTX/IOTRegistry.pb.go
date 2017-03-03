@@ -10,7 +10,7 @@ It is generated from these files:
 
 It has these top-level messages:
 	RegisterThingTX
-	RegisterIdentityTX
+	RegisterOwnerTX
 	RegisterSpecTX
 */
 package IOTRegistry
@@ -37,16 +37,16 @@ func (m *RegisterThingTX) Reset()         { *m = RegisterThingTX{} }
 func (m *RegisterThingTX) String() string { return proto.CompactTextString(m) }
 func (*RegisterThingTX) ProtoMessage()    {}
 
-type RegisterIdentityTX struct {
+type RegisterOwnerTX struct {
 	OwnerName string `protobuf:"bytes,1,opt,name=OwnerName" json:"OwnerName,omitempty"`
 	PubKey    []byte `protobuf:"bytes,2,opt,name=PubKey,proto3" json:"PubKey,omitempty"`
 	Signature []byte `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
 	Data      string `protobuf:"bytes,3,opt,name=Data" json:"Data,omitempty"`
 }
 
-func (m *RegisterIdentityTX) Reset()         { *m = RegisterIdentityTX{} }
-func (m *RegisterIdentityTX) String() string { return proto.CompactTextString(m) }
-func (*RegisterIdentityTX) ProtoMessage()    {}
+func (m *RegisterOwnerTX) Reset()         { *m = RegisterOwnerTX{} }
+func (m *RegisterOwnerTX) String() string { return proto.CompactTextString(m) }
+func (*RegisterOwnerTX) ProtoMessage()    {}
 
 type RegisterSpecTX struct {
 	SpecName  string `protobuf:"bytes,1,opt,name=SpecName" json:"SpecName,omitempty"`
