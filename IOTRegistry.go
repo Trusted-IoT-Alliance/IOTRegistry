@@ -16,11 +16,11 @@ import (
 
 	"crypto/sha256"
 
+	"github.com/InternetOfTrustedThings/IOTRegistry/IOTRegistryStore"
+	IOTRegistryTX "github.com/InternetOfTrustedThings/IOTRegistry/IOTRegistryTX"
 	"github.com/btcsuite/btcd/btcec"
 	proto "github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
-	"github.com/zmanian/IOTRegistry/IOTRegistryStore"
-	IOTRegistryTX "github.com/zmanian/IOTRegistry/IOTRegistryTX"
 )
 
 type IOTRegistry struct {
