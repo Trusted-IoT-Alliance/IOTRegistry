@@ -16,8 +16,8 @@ import (
 
 	"crypto/sha256"
 
-	"github.com/InternetOfTrustedThings/IOTRegistry/IOTRegistryStore"
-	IOTRegistryTX "github.com/InternetOfTrustedThings/IOTRegistry/IOTRegistryTX"
+	"github.com/InternetofTrustedThings/IOTRegistry/IOTRegistryStore"
+	IOTRegistryTX "github.com/InternetofTrustedThings/IOTRegistry/IOTRegistryTX"
 	"github.com/btcsuite/btcd/btcec"
 	proto "github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
