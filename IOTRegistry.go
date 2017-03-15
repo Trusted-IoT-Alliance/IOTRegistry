@@ -16,11 +16,11 @@ import (
 
 	"crypto/sha256"
 
-	"github.com/InternetofTrustedThings/IOTRegistry/IOTRegistryStore"
-	IOTRegistryTX "github.com/InternetofTrustedThings/IOTRegistry/IOTRegistryTX"
 	"github.com/btcsuite/btcd/btcec"
 	proto "github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/zmanian/IOTRegistry/IOTRegistryStore"
+	IOTRegistryTX "github.com/zmanian/IOTRegistry/IOTRegistryTX"
 )
 
 type IOTRegistry struct {
@@ -45,7 +45,8 @@ func verify(pubKeyBytes []byte, sigBytes []byte, message string) (err error) {
 		return fmt.Errorf("Invalid pubkey key (%s)\n", hex.EncodeToString(pubKeyBytes))
 	}
 
-	//parse the DER signature into a signature object
+	//DER is a standard for serialization
+	//parsing DER signature from bitcoin curve into a signature object
 	signature, err := btcec.ParseDERSignature(sigBytes, btcec.S256())
 	if err != nil {
 		fmt.Printf("Bad Creator signature encoding\n")
@@ -54,7 +55,7 @@ func verify(pubKeyBytes []byte, sigBytes []byte, message string) (err error) {
 
 	messageBytes := sha256.Sum256([]byte(message))
 
-	//attempt to verify the signature
+	//try to verify the signature
 	success := signature.Verify(messageBytes[:], creatorKey)
 	if !success {
 		fmt.Printf("Invalid Creator Signature\n")
@@ -254,7 +255,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			stub.PutState("Alias: "+identity, aliasStoreBytes)
 		}
 
-		store := IOTRegistryStore.Things{}
+		store := IOTRegistryStore.Thing{}
 		store.Alias = registerThingArgs.Identities
 		store.OwnerName = registerThingArgs.OwnerName
 		store.Data = registerThingArgs.Data
@@ -369,11 +370,16 @@ func ownerNameToJSON(ownerName string, pubKey []byte) ([]byte, error) {
 }
 
 /*
-
- */
+	Query is a mechanism for requesting information from the ledger. There are three query methods in this chaincode: owner, thing, and spec.
+	Each query will return data as a json formatted slice of bytes
+*/
 func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	// fmt.Printf("function: %s\n", function)
 	switch function {
+	/*
+		An "owner" query requests information stored in the ledger about a particular owner.
+		If the owner is registered, the JSON will contain the owner's name and public key.
+	*/
 	case "owner":
 		if len(args) != 1 {
 			return nil, fmt.Errorf("No argument specified\n")
@@ -398,11 +404,16 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 		}
 		jsonBytes, err := ownerNameToJSON(owner.OwnerName, owner.Pubkey)
 		return jsonBytes, err
+		/*
+			A "thing" query requests information stored in the ledger about a particular thing.
+			Things are indexed by a Nonce, which should be a valid hex string.
+			If the thing is registered, the JSON will contain the owner's list of aliases, owner name, an arbitrary string of data, and a spec name.
+		*/
 	case "thing":
 		if len(args) != 1 {
 			return nil, fmt.Errorf("No argument specified\n")
 		}
-		thing := IOTRegistryStore.Things{}
+		thing := IOTRegistryStore.Thing{}
 		thingNonce := args[0]
 		thingBytes, err := stub.GetState("Thing: " + thingNonce)
 		if err != nil {
@@ -420,6 +431,11 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 			return nil, err
 		}
 		return json.Marshal(thing)
+		/*
+			A "spec" query requests information stored in the ledger about a particular specification.
+			Specs are indexed by a SpecName, which is a string.
+			If the spec is registered, the JSON will contain the owner's name and a string of data.
+		*/
 	case "spec":
 		if len(args) != 1 {
 			return nil, fmt.Errorf("no argument specified\n")
