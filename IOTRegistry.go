@@ -84,22 +84,22 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 	switch function {
 	/*
-		registerOwner puts an "OwnerName: <OwnerName>" state to the ledger, indexed by the ownerName.
-		TX struct: 		RegisterOwnerTX
+		registerOwner puts a "RegistrantName: <RegistrantName>" state to the ledger, indexed by the registrantName.
+		TX struct: 		CreateRegistrantTX
 		Store struct: 	Owner
 	*/
 	case "registerOwner":
 		//declare and initialize RegisterIdentity struct
-		registerNameArgs := IOTRegistryTX.RegisterIdentityTX{}
+		registerNameArgs := IOTRegistryTX.CreateRegistrantTX{}
 		err = proto.Unmarshal(argsBytes, &registerNameArgs)
 		if err != nil {
 			fmt.Printf("Invalid argument expected RegisterNameTX protocol buffer %s\n", err.Error())
 			return nil, fmt.Errorf("Invalid argument expected RegisterNameTX protocol buffer %s\n", err.Error())
 		}
 
-		if len(registerNameArgs.OwnerName) == 0 {
-			fmt.Printf("length of OwnerName (%s) is zero\n", registerNameArgs.OwnerName)
-			return nil, fmt.Errorf("length of OwnerName (%s) is zero\n", registerNameArgs.OwnerName)
+		if len(registerNameArgs.RegistrantName) == 0 {
+			fmt.Printf("length of RegistrantName (%s) is zero\n", registerNameArgs.RegistrantName)
+			return nil, fmt.Errorf("length of RegistrantName (%s) is zero\n", registerNameArgs.RegistrantName)
 		}
 		if len(registerNameArgs.PubKey) == 0 {
 			fmt.Printf("length of Pubkey (%s) is zero\n", registerNameArgs.PubKey)
@@ -110,21 +110,21 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			return nil, fmt.Errorf("length of Signature (%s) is zero\n", registerNameArgs.Signature)
 		}
 		//check if name is available
-		registerNameBytes, err := stub.GetState("OwnerName: " + registerNameArgs.OwnerName)
+		registerNameBytes, err := stub.GetState("RegistrantName: " + registerNameArgs.RegistrantName)
 		if err != nil {
-			fmt.Printf("Could not get OwnerName (%s) State\n", registerNameArgs.OwnerName)
-			return nil, fmt.Errorf("Could not get OwnerName (%s) State\n", registerNameArgs.OwnerName)
+			fmt.Printf("Could not get RegistrantName (%s) State\n", registerNameArgs.RegistrantName)
+			return nil, fmt.Errorf("Could not get RegistrantName (%s) State\n", registerNameArgs.RegistrantName)
 		}
 
 		//if name unavailable
 		if len(registerNameBytes) != 0 {
-			fmt.Printf("OwnerName (%s) is unavailable\n", registerNameArgs.OwnerName)
-			return nil, fmt.Errorf("OwnerName (%s) is unavailable\n", registerNameArgs.OwnerName)
+			fmt.Printf("RegistrantName (%s) is unavailable\n", registerNameArgs.RegistrantName)
+			return nil, fmt.Errorf("RegistrantName (%s) is unavailable\n", registerNameArgs.RegistrantName)
 		}
 
 		creatorKeyBytes := registerNameArgs.PubKey
 		creatorSig := registerNameArgs.Signature
-		message := registerNameArgs.OwnerName + ":" + registerNameArgs.Data
+		message := registerNameArgs.RegistrantName + ":" + registerNameArgs.Data
 
 		err = verify(creatorKeyBytes, creatorSig, message)
 		if err != nil {
@@ -134,7 +134,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 		//marshall into store type. Then put that variable into the state
 		store := IOTRegistryStore.Identities{}
-		store.OwnerName = registerNameArgs.OwnerName
+		store.RegistrantName = registerNameArgs.RegistrantName
 		store.Pubkey = registerNameArgs.PubKey
 		storeBytes, err := proto.Marshal(&store)
 		if err != nil {
@@ -142,15 +142,15 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			return nil, fmt.Errorf("Error marshalling variable of type IOTRegistryStore.Identities{}: (%v)\n", err.Error())
 		}
 
-		err = stub.PutState("OwnerName: "+registerNameArgs.OwnerName, storeBytes)
+		err = stub.PutState("RegistrantName: "+registerNameArgs.RegistrantName, storeBytes)
 		if err != nil {
-			fmt.Printf("error putting OwnerName (%s) to ledger: (%v)\n", registerNameArgs.OwnerName, err.Error())
-			return nil, fmt.Errorf("error putting OwnerName (%s) to ledger: (%v)\n", registerNameArgs.OwnerName, err.Error())
+			fmt.Printf("error putting RegistrantName (%s) to ledger: (%v)\n", registerNameArgs.RegistrantName, err.Error())
+			return nil, fmt.Errorf("error putting RegistrantName (%s) to ledger: (%v)\n", registerNameArgs.RegistrantName, err.Error())
 		}
 	/*
 		registerThing does, essentially, two things.
 		1.	puts a "Thing: <Nonce>" state to the ledger, indexed by the nonce.
-		|		-a thing contains a string slice of identities, an OwnerName, an arbitrary string of data, and the name of a specification.
+		|		-a thing contains a string slice of identities, an RegistrantName, an arbitrary string of data, and the name of a specification.
 		2.	for each element of the Identities string slice, puts an "Alias: <identity>" state to the ledger, indexed by identity.
 		|		-an Alias contains a nonce, which can be used to access its parent "thing"
 		TX struct: 		RegisterThingTX
@@ -163,9 +163,9 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			fmt.Printf("Invalid argument expected RegisterThingTX protocol buffer. Err: (%s)\n", err.Error())
 			return nil, fmt.Errorf("Invalid argument expected RegisterThingTX protocol buffer. Err: (%s)\n", err.Error())
 		}
-		if len(registerThingArgs.OwnerName) == 0 {
-			fmt.Printf("length of OwnerName (%s) is zero\n", registerThingArgs.OwnerName)
-			return nil, fmt.Errorf("length of OwnerName (%s) is zero\n", registerThingArgs.OwnerName)
+		if len(registerThingArgs.RegistrantName) == 0 {
+			fmt.Printf("length of RegistrantName (%s) is zero\n", registerThingArgs.RegistrantName)
+			return nil, fmt.Errorf("length of RegistrantName (%s) is zero\n", registerThingArgs.RegistrantName)
 		}
 		if len(registerThingArgs.Nonce) == 0 {
 			fmt.Printf("length of Nonce (%s) is zero\n", registerThingArgs.Nonce)
@@ -190,30 +190,30 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//check if owner is valid id (name exists in registry)
-		checkIDBytes, err := stub.GetState("OwnerName: " + registerThingArgs.OwnerName)
+		checkIDBytes, err := stub.GetState("RegistrantName: " + registerThingArgs.RegistrantName)
 		if err != nil {
-			fmt.Printf("Failed to look up OwnerName (%s) \n", registerThingArgs.OwnerName)
-			return nil, fmt.Errorf("Failed to look up OwnerName (%s) \n", registerThingArgs.OwnerName)
+			fmt.Printf("Failed to look up RegistrantName (%s) \n", registerThingArgs.RegistrantName)
+			return nil, fmt.Errorf("Failed to look up RegistrantName (%s) \n", registerThingArgs.RegistrantName)
 		}
 
 		//if owner is not registered name
 		if len(checkIDBytes) == 0 {
-			fmt.Printf("OwnerName (%s) is not registered\n", registerThingArgs.OwnerName)
-			return nil, fmt.Errorf("OwnerName (%s) is not registered\n", registerThingArgs.OwnerName)
+			fmt.Printf("RegistrantName (%s) is not registered\n", registerThingArgs.RegistrantName)
+			return nil, fmt.Errorf("RegistrantName (%s) is not registered\n", registerThingArgs.RegistrantName)
 		}
 
 		//check if any identities exist
-		//we're checking if any identities are registered as ownernames but not if they are registered as aliases
+		//we're checking if any identities are registered as RegistrantNames but not if they are registered as aliases
 		for _, identity := range registerThingArgs.Identities {
-			aliasCheckBytes, err := stub.GetState("OwnerName: " + identity)
+			aliasCheckBytes, err := stub.GetState("RegistrantName: " + identity)
 			if err != nil {
 				fmt.Printf("Could not get identity: (%s) State\n", identity)
 				return nil, fmt.Errorf("Could not get identity: (%s) State\n", identity)
 			}
 			//throw error if any of the identities already exist
 			if len(aliasCheckBytes) != 0 {
-				fmt.Printf("Ownername: (%s) is already in registry\n", identity)
-				return nil, fmt.Errorf("Ownername: (%s) is already in registry\n", identity)
+				fmt.Printf("RegistrantName: (%s) is already in registry\n", identity)
+				return nil, fmt.Errorf("RegistrantName: (%s) is already in registry\n", identity)
 			}
 		}
 
@@ -221,8 +221,8 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		ownerRegistration := IOTRegistryStore.Identities{}
 		err = proto.Unmarshal(checkIDBytes, &ownerRegistration)
 		if err != nil {
-			fmt.Printf("Error unmarshalling OwnerName (%s) state (%v)", registerThingArgs.OwnerName, err.Error())
-			return nil, fmt.Errorf("Error unmarshalling OwnerName (%s) state (%v)", registerThingArgs.OwnerName, err.Error())
+			fmt.Printf("Error unmarshalling RegistrantName (%s) state (%v)", registerThingArgs.RegistrantName, err.Error())
+			return nil, fmt.Errorf("Error unmarshalling RegistrantName (%s) state (%v)", registerThingArgs.RegistrantName, err.Error())
 		}
 
 		ownerPubKeyBytes := ownerRegistration.Pubkey
@@ -230,7 +230,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		ownerSig := registerThingArgs.Signature
 
 		//TODO review later
-		message := registerThingArgs.OwnerName
+		message := registerThingArgs.RegistrantName
 		for _, identity := range registerThingArgs.Identities {
 			message += ":" + identity
 		}
@@ -257,7 +257,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 		store := IOTRegistryStore.Things{}
 		store.Alias = registerThingArgs.Identities
-		store.OwnerName = registerThingArgs.OwnerName
+		store.RegistrantName = registerThingArgs.RegistrantName
 		store.Data = registerThingArgs.Data
 		store.SpecName = registerThingArgs.Spec
 		storeBytes, err := proto.Marshal(&store)
@@ -282,8 +282,8 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			fmt.Printf("Invalid argument expected RegisterSpecTX protocol buffer %s\n", err.Error())
 		}
 
-		if len(specArgs.OwnerName) == 0 {
-			return nil, fmt.Errorf("length of OwnerName (%s) is zero\n", specArgs.OwnerName)
+		if len(specArgs.RegistrantName) == 0 {
+			return nil, fmt.Errorf("length of RegistrantName (%s) is zero\n", specArgs.RegistrantName)
 		}
 		if len(specArgs.SpecName) == 0 {
 			return nil, fmt.Errorf("length of Nonce (%s) is zero\n", specArgs.SpecName)
@@ -306,16 +306,16 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//check if owner is valid id (name exists in registry)
-		checkIDBytes, err := stub.GetState("OwnerName: " + specArgs.OwnerName)
+		checkIDBytes, err := stub.GetState("RegistrantName: " + specArgs.RegistrantName)
 		if err != nil {
-			fmt.Printf("Failed to look up OwnerName\n")
-			return nil, fmt.Errorf("Failed to look up OwnerName (%s)\n", specArgs.OwnerName)
+			fmt.Printf("Failed to look up RegistrantName\n")
+			return nil, fmt.Errorf("Failed to look up RegistrantName (%s)\n", specArgs.RegistrantName)
 		}
 
 		//if owner is not registered name
 		if len(checkIDBytes) == 0 {
-			fmt.Printf("OwnerName is not registered\n")
-			return nil, fmt.Errorf("OwnerName is not registered %s\n", specArgs.OwnerName)
+			fmt.Printf("RegistrantName is not registered\n")
+			return nil, fmt.Errorf("RegistrantName is not registered %s\n", specArgs.RegistrantName)
 		}
 
 		//retrieve state associated with owner name to get public key
@@ -330,14 +330,14 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		ownerSig := specArgs.Signature
 
 		//TODO review later
-		message := specArgs.SpecName + ":" + specArgs.OwnerName + ":" + specArgs.Data
+		message := specArgs.SpecName + ":" + specArgs.RegistrantName + ":" + specArgs.Data
 		err = verify(ownerPubKeyBytes, ownerSig, message)
 		if err != nil {
 			return nil, fmt.Errorf("Error verifying signature\n")
 		}
 
 		store := IOTRegistryStore.Spec{}
-		store.OwnerName = specArgs.OwnerName
+		store.RegistrantName = specArgs.RegistrantName
 		store.Data = specArgs.Data
 		storeBytes, err := proto.Marshal(&store)
 		if err != nil {
@@ -353,13 +353,13 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 }
 
 /* declares, initializes, and marshalls struct containing owner information to JSON */
-func ownerNameToJSON(ownerName string, pubKey []byte) ([]byte, error) {
+func RegistrantNameToJSON(RegistrantName string, pubKey []byte) ([]byte, error) {
 	type JSONIdentities struct {
-		OwnerName string
-		Pubkey    string
+		RegistrantName string
+		Pubkey         string
 	}
 	jsonOwner := JSONIdentities{}
-	jsonOwner.OwnerName = ownerName
+	jsonOwner.RegistrantName = RegistrantName
 	jsonOwner.Pubkey = hex.EncodeToString(pubKey)
 
 	jsonstring, err := json.Marshal(jsonOwner)
@@ -387,22 +387,22 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 
 		owner := IOTRegistryStore.Identities{}
 
-		ownerName := args[0]
-		ownerBytes, err := stub.GetState("OwnerName: " + ownerName)
+		RegistrantName := args[0]
+		ownerBytes, err := stub.GetState("RegistrantName: " + RegistrantName)
 		if err != nil {
 			fmt.Printf(err.Error())
 			return nil, err
 		}
 
 		if len(ownerBytes) == 0 {
-			return nil, fmt.Errorf("OwnerName (%s) does not exist\n", ownerName)
+			return nil, fmt.Errorf("RegistrantName (%s) does not exist\n", RegistrantName)
 		}
 		err = proto.Unmarshal(ownerBytes, &owner)
 		if err != nil {
 			fmt.Printf(err.Error())
 			return nil, err
 		}
-		jsonBytes, err := ownerNameToJSON(owner.OwnerName, owner.Pubkey)
+		jsonBytes, err := RegistrantNameToJSON(owner.RegistrantName, owner.Pubkey)
 		return jsonBytes, err
 		/*
 			A "thing" query requests information stored in the ledger about a particular thing.
