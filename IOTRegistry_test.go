@@ -374,7 +374,7 @@ type registryTest struct {
 	pubKeyString     string
 	RegistrantName   string
 	data             string
-	nonceBytes       []byte
+	nonce            string
 	specName         string
 	identities       []string
 }
@@ -387,38 +387,22 @@ func TestIOTRegistryChaincode(t *testing.T) {
 	bst := new(IOTRegistry)
 	stub := shim.NewMockStub("IOTRegistry", bst)
 
-	nonceBytes1, err := hex.DecodeString("1f7b169c846f218ab552fa82fbf86758")
-	if err != nil {
-		HandleError(t, fmt.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err))
-	}
-	nonceBytes2, err := hex.DecodeString("bf5c97d2d2a313e4f95957818a7b3edc")
-	if err != nil {
-		HandleError(t, fmt.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err))
-	}
-	nonceBytes3, err := hex.DecodeString("a492f2b8a67697c4f91d9b9332e82347")
-	if err != nil {
-		HandleError(t, fmt.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err))
-	}
-	nonceBytes4, err := hex.DecodeString("83de17bd7a25e0a9f6813976eadf26de")
-	if err != nil {
-		HandleError(t, fmt.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err))
-	}
 	var registryTestsSuccess = []registryTest{
 		{ /*private key  1*/ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20",
 			/*public key 1*/ "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc",
-			"Alice", "test data", nonceBytes1, "test spec", []string{"Foo", "Bar"}},
+			"Alice", "test data", "1f7b169c846f218ab552fa82fbf86758", "test spec", []string{"Foo", "Bar"}},
 
 		{ /*private key  2*/ "246d4fa59f0baa3329d3908659936ac2ac9c3539dc925977759cffe3c6316e19",
 			/*public key 2*/ "03442b817ad2154766a8f5192fc5a7506b7e52cdbf4fcf8e1bc33764698443c3c9",
-			"Gerald", "test data 1", nonceBytes2, "test spec 2", []string{"one", "two", "three"}},
+			"Gerald", "test data 1", "bf5c97d2d2a313e4f95957818a7b3edc", "test spec 2", []string{"one", "two", "three"}},
 
 		{ /*private key  3*/ "166cc93d9eadb573b329b5993b9671f1521679cea90fe52e398e66c1d6373abf",
 			/*public key 3*/ "02242a1c19bc831cd95a9e5492015043250cbc17d0eceb82612ce08736b8d753a6",
-			"Bob", "test data 2", nonceBytes3, "test spec 3", []string{"ident4", "ident5", "ident6"}},
+			"Bob", "test data 2", "a492f2b8a67697c4f91d9b9332e82347", "test spec 3", []string{"ident4", "ident5", "ident6"}},
 
 		{ /*private key  4*/ "01b756f231c72747e024ceee41703d9a7e3ab3e68d9b73d264a0196bd90acedf",
 			/*public key 4*/ "020f2b95263c4b3be740b7b3fda4c2f4113621c1a7a360713a2540eeb808519cd6",
-			"Cassandra", "test data 3", nonceBytes4, "test spec 4", []string{"ident7", "ident8", "ident9"}},
+			"Cassandra", "test data 3", "83de17bd7a25e0a9f6813976eadf26de", "test spec 4", []string{"ident7", "ident8", "ident9"}},
 	}
 	for _, test := range registryTestsSuccess {
 		err := registerOwner(t, stub, test.RegistrantName, test.data, test.privateKeyString, test.pubKeyString)
@@ -431,12 +415,16 @@ func TestIOTRegistryChaincode(t *testing.T) {
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))
 		}
-		err = registerThing(t, stub, test.nonceBytes, test.identities, test.pubKeyString, test.specName, test.data, test.privateKeyString)
+		nonceBytes, err := hex.DecodeString(test.nonce)
+		if err != nil {
+			HandleError(t, fmt.Errorf("Error decoding nonce bytes: %s", err.Error()))
+		}
+		err = registerThing(t, stub, nonceBytes, test.identities, test.pubKeyString, test.specName, test.data, test.privateKeyString)
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))
 		}
 
-		index = hex.EncodeToString(test.nonceBytes)
+		index = test.nonce
 		err = checkQuery(t, stub, "thing", index, test)
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))
