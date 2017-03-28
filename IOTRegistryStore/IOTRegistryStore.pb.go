@@ -26,8 +26,8 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 type Identities struct {
-	RegistrantName string `protobuf:"bytes,1,opt,name=RegistrantName" json:"RegistrantName,omitempty"`
-	Pubkey         []byte `protobuf:"bytes,3,opt,name=Pubkey,proto3" json:"Pubkey,omitempty"`
+	RegistrantName   string `protobuf:"bytes,1,opt,name=RegistrantName" json:"RegistrantName,omitempty"`
+	RegistrantPubkey []byte `protobuf:"bytes,3,opt,name=RegistrantPubkey,proto3" json:"RegistrantPubkey,omitempty"`
 }
 
 func (m *Identities) Reset()         { *m = Identities{} }
@@ -43,10 +43,10 @@ func (m *Alias) String() string { return proto.CompactTextString(m) }
 func (*Alias) ProtoMessage()    {}
 
 type Things struct {
-	Alias          []string `protobuf:"bytes,1,rep,name=Alias" json:"Alias,omitempty"`
-	RegistrantName string   `protobuf:"bytes,2,opt,name=RegistrantName" json:"RegistrantName,omitempty"`
-	Data           string   `protobuf:"bytes,3,opt,name=Data" json:"Data,omitempty"`
-	SpecName       string   `protobuf:"bytes,4,opt,name=SpecName" json:"SpecName,omitempty"`
+	Alias            []string `protobuf:"bytes,1,rep,name=Alias" json:"Alias,omitempty"`
+	RegistrantPubkey string   `protobuf:"bytes,2,opt,name=RegistrantPubkey" json:"RegistrantPubkey,omitempty"`
+	Data             string   `protobuf:"bytes,3,opt,name=Data" json:"Data,omitempty"`
+	SpecName         string   `protobuf:"bytes,4,opt,name=SpecName" json:"SpecName,omitempty"`
 }
 
 func (m *Things) Reset()         { *m = Things{} }
@@ -54,8 +54,8 @@ func (m *Things) String() string { return proto.CompactTextString(m) }
 func (*Things) ProtoMessage()    {}
 
 type Spec struct {
-	RegistrantName string `protobuf:"bytes,2,opt,name=RegistrantName" json:"RegistrantName,omitempty"`
-	Data           string `protobuf:"bytes,1,opt,name=Data" json:"Data,omitempty"`
+	RegistrantPubkey string `protobuf:"bytes,2,opt,name=RegistrantPubkey" json:"RegistrantPubkey,omitempty"`
+	Data             string `protobuf:"bytes,1,opt,name=Data" json:"Data,omitempty"`
 }
 
 func (m *Spec) Reset()         { *m = Spec{} }

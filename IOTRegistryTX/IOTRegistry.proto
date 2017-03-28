@@ -4,7 +4,7 @@ syntax ="proto3";
 message RegisterThingTX {
     bytes Nonce =1;
     repeated string Identities =2;
-    string RegistrantName =3;
+    string RegistrantPubkey =3;
     bytes Signature =4;
     string Data =5;
     string Spec =6;
@@ -12,14 +12,14 @@ message RegisterThingTX {
 
 message CreateRegistrantTX{
     string RegistrantName =1;
-    bytes PubKey =2;
+    bytes RegistrantPubkey =2;
     bytes Signature =4;
     string Data =3;
 }
 
 message RegisterSpecTX{
 	string SpecName =1;
-	string RegistrantName =2;
+	string RegistrantPubkey =2;
 	bytes Signature =3;
     string Data =4;
 }
