@@ -73,16 +73,16 @@ func randString(n int, kindOfString string) string {
 }
 
 /*
-	generates a signature for registering an OwnerName based on private key and message
+	generates a signature for registering an RegistrantName based on private key and message
 */
-func generateRegisterNameSig(ownerName string, data string, privateKeyStr string) (string, error) {
+func generateRegisterNameSig(RegistrantName string, data string, privateKeyStr string) (string, error) {
 	privKeyByte, err := hex.DecodeString(privateKeyStr)
 	if err != nil {
 		return "", fmt.Errorf("error decoding hex encoded private key (%s)", privateKeyStr)
 	}
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
 
-	message := ownerName + ":" + data
+	message := RegistrantName + ":" + data
 	messageBytes := sha256.Sum256([]byte(message))
 	sig, err := privKey.Sign(messageBytes[:])
 	if err != nil {
@@ -94,13 +94,13 @@ func generateRegisterNameSig(ownerName string, data string, privateKeyStr string
 /*
 	generates a signature for registering a thing based on private key and message
 */
-func generateRegisterThingSig(ownerName string, identities []string, spec string, data string, privateKeyStr string) (string, error) {
+func generateRegisterThingSig(RegistrantName string, identities []string, spec string, data string, privateKeyStr string) (string, error) {
 	privKeyByte, err := hex.DecodeString(privateKeyStr)
 	if err != nil {
 		return "", fmt.Errorf("error decoding hex encoded private key (%s)", privateKeyStr)
 	}
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
-	message := ownerName
+	message := RegistrantName
 	for _, identity := range identities {
 		message += ":" + identity
 	}
@@ -117,14 +117,14 @@ func generateRegisterThingSig(ownerName string, identities []string, spec string
 /*
 	generates a signature for registering a spec based on private key and message
 */
-func generateRegisterSpecSig(specName string, ownerName string, data string, privateKeyStr string) (string, error) {
+func generateRegisterSpecSig(specName string, RegistrantName string, data string, privateKeyStr string) (string, error) {
 	privKeyByte, err := hex.DecodeString(privateKeyStr)
 	if err != nil {
 		return "", fmt.Errorf("error decoding hex encoded private key (%s)", privateKeyStr)
 	}
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
 
-	message := specName + ":" + ownerName + ":" + data
+	message := specName + ":" + RegistrantName + ":" + data
 	messageBytes := sha256.Sum256([]byte(message))
 	sig, err := privKey.Sign(messageBytes[:])
 	if err != nil {
@@ -151,8 +151,8 @@ func checkInit(t *testing.T, stub *shim.MockStub, args []string) {
 func registerOwner(t *testing.T, stub *shim.MockStub, name string, data string,
 	privateKeyString string, pubKeyString string) error {
 
-	registerName := IOTRegistryTX.RegisterIdentityTX{}
-	registerName.OwnerName = name
+	registerName := IOTRegistryTX.CreateRegistrantTX{}
+	registerName.RegistrantName = name
 	pubKeyBytes, err := hex.DecodeString(pubKeyString)
 	if err != nil {
 		return fmt.Errorf("%v", err)
@@ -161,7 +161,7 @@ func registerOwner(t *testing.T, stub *shim.MockStub, name string, data string,
 	registerName.Data = data
 
 	//create signature
-	hexOwnerSig, err := generateRegisterNameSig(registerName.OwnerName, registerName.Data, privateKeyString)
+	hexOwnerSig, err := generateRegisterNameSig(registerName.RegistrantName, registerName.Data, privateKeyString)
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
@@ -189,7 +189,7 @@ func registerThing(t *testing.T, stub *shim.MockStub, nonce []byte, identities [
 
 	registerThing.Nonce = nonce
 	registerThing.Identities = identities
-	registerThing.OwnerName = name
+	registerThing.RegistrantName = name
 	registerThing.Spec = spec
 
 	//create signature
@@ -215,17 +215,17 @@ func registerThing(t *testing.T, stub *shim.MockStub, nonce []byte, identities [
 /*
 	registers a store type "Spec" to ledger by calling to Invoke()
 */
-func registerSpec(t *testing.T, stub *shim.MockStub, specName string, ownerName string,
+func registerSpec(t *testing.T, stub *shim.MockStub, specName string, RegistrantName string,
 	data string, privateKeyString string) error {
 
 	registerSpec := IOTRegistryTX.RegisterSpecTX{}
 
 	registerSpec.SpecName = specName
-	registerSpec.OwnerName = ownerName
+	registerSpec.RegistrantName = RegistrantName
 	registerSpec.Data = data
 
 	//create signature
-	hexSpecSig, err := generateRegisterSpecSig(specName, ownerName, data, privateKeyString)
+	hexSpecSig, err := generateRegisterSpecSig(specName, RegistrantName, data, privateKeyString)
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
@@ -326,8 +326,8 @@ func checkQuery(t *testing.T, stub *shim.MockStub, function string, index string
 	}
 	fmt.Printf("JSON: %s\n", jsonMap)
 	if function == "owner" {
-		if jsonMap["OwnerName"] != expected.ownerName {
-			return fmt.Errorf("\nOwnerName got       (%s)\nOwnerName expected: (%s)\n", jsonMap["OwnerName"], expected.ownerName)
+		if jsonMap["RegistrantName"] != expected.RegistrantName {
+			return fmt.Errorf("\nRegistrantName got       (%s)\nRegistrantName expected: (%s)\n", jsonMap["RegistrantName"], expected.RegistrantName)
 		}
 		if jsonMap["Pubkey"] != expected.pubKeyString {
 			return fmt.Errorf("\nPubkey got       (%s)\nPubkey expected: (%s)\n", jsonMap["Pubkey"], expected.pubKeyString)
@@ -340,8 +340,8 @@ func checkQuery(t *testing.T, stub *shim.MockStub, function string, index string
 		if !(reflect.DeepEqual(aliases, expected.identities)) {
 			return fmt.Errorf("\nAlias got       (%x)\nAlias expected: (%x)\n", jsonMap["Alias"], expected.identities)
 		}
-		if jsonMap["OwnerName"] != expected.ownerName {
-			return fmt.Errorf("\nOwnerName got       (%s)\nOwnerName expected: (%s)\n", jsonMap["OwnerName"], expected.ownerName)
+		if jsonMap["RegistrantName"] != expected.RegistrantName {
+			return fmt.Errorf("\nRegistrantName got       (%s)\nRegistrantName expected: (%s)\n", jsonMap["RegistrantName"], expected.RegistrantName)
 		}
 		if jsonMap["Data"] != expected.data {
 			return fmt.Errorf("\nData got       (%s)\nData expected: (%s)\n", jsonMap["Data"], expected.data)
@@ -350,8 +350,8 @@ func checkQuery(t *testing.T, stub *shim.MockStub, function string, index string
 			return fmt.Errorf("\nSpecName got       (%s)\nSpecName expected: (%s)\n", jsonMap["SpecName"], expected.specName)
 		}
 	} else if function == "spec" {
-		if jsonMap["OwnerName"] != expected.ownerName {
-			return fmt.Errorf("\nOwnerName got       (%s)\nOwnerName expected: (%s)\n", jsonMap["OwnerName"], expected.ownerName)
+		if jsonMap["RegistrantName"] != expected.RegistrantName {
+			return fmt.Errorf("\nRegistrantName got       (%s)\nRegistrantName expected: (%s)\n", jsonMap["RegistrantName"], expected.RegistrantName)
 		}
 		if jsonMap["Data"] != expected.data {
 			return fmt.Errorf("\nData got       (%s)\nData expected: (%s)\n", jsonMap["Data"], expected.data)
@@ -373,7 +373,7 @@ func HandleError(t *testing.T, err error) (b bool) {
 type registryTest struct {
 	privateKeyString string
 	pubKeyString     string
-	ownerName        string
+	RegistrantName   string
 	data             string
 	nonceBytes       []byte
 	specName         string
@@ -422,17 +422,17 @@ func TestIOTRegistryChaincode(t *testing.T) {
 			"Cassandra", "test data 3", nonceBytes4, "test spec 4", []string{"ident7", "ident8", "ident9"}},
 	}
 	for _, test := range registryTestsSuccess {
-		err := registerOwner(t, stub, test.ownerName, test.data, test.privateKeyString, test.pubKeyString)
+		err := registerOwner(t, stub, test.RegistrantName, test.data, test.privateKeyString, test.pubKeyString)
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))
 			return
 		}
-		index := test.ownerName
+		index := test.RegistrantName
 		err = checkQuery(t, stub, "owner", index, test)
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))
 		}
-		err = registerThing(t, stub, test.nonceBytes, test.identities, test.ownerName, test.specName, test.data, test.privateKeyString)
+		err = registerThing(t, stub, test.nonceBytes, test.identities, test.RegistrantName, test.specName, test.data, test.privateKeyString)
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))
 		}
@@ -442,7 +442,7 @@ func TestIOTRegistryChaincode(t *testing.T) {
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))
 		}
-		err = registerSpec(t, stub, test.specName, test.ownerName, test.data, test.privateKeyString)
+		err = registerSpec(t, stub, test.specName, test.RegistrantName, test.data, test.privateKeyString)
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))
 		}

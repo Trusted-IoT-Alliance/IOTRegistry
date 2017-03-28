@@ -10,7 +10,7 @@ It is generated from these files:
 
 It has these top-level messages:
 	RegisterThingTX
-	RegisterIdentityTX
+	CreateRegistrantTX
 	RegisterSpecTX
 */
 package IOTRegistry
@@ -25,34 +25,34 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 type RegisterThingTX struct {
-	Nonce      []byte   `protobuf:"bytes,1,opt,name=Nonce,proto3" json:"Nonce,omitempty"`
-	Identities []string `protobuf:"bytes,2,rep,name=Identities" json:"Identities,omitempty"`
-	OwnerName  string   `protobuf:"bytes,3,opt,name=OwnerName" json:"OwnerName,omitempty"`
-	Signature  []byte   `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
-	Data       string   `protobuf:"bytes,5,opt,name=Data" json:"Data,omitempty"`
-	Spec       string   `protobuf:"bytes,6,opt,name=Spec" json:"Spec,omitempty"`
+	Nonce          []byte   `protobuf:"bytes,1,opt,name=Nonce,proto3" json:"Nonce,omitempty"`
+	Identities     []string `protobuf:"bytes,2,rep,name=Identities" json:"Identities,omitempty"`
+	RegistrantName string   `protobuf:"bytes,3,opt,name=RegistrantName" json:"RegistrantName,omitempty"`
+	Signature      []byte   `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
+	Data           string   `protobuf:"bytes,5,opt,name=Data" json:"Data,omitempty"`
+	Spec           string   `protobuf:"bytes,6,opt,name=Spec" json:"Spec,omitempty"`
 }
 
 func (m *RegisterThingTX) Reset()         { *m = RegisterThingTX{} }
 func (m *RegisterThingTX) String() string { return proto.CompactTextString(m) }
 func (*RegisterThingTX) ProtoMessage()    {}
 
-type RegisterIdentityTX struct {
-	OwnerName string `protobuf:"bytes,1,opt,name=OwnerName" json:"OwnerName,omitempty"`
-	PubKey    []byte `protobuf:"bytes,2,opt,name=PubKey,proto3" json:"PubKey,omitempty"`
-	Signature []byte `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
-	Data      string `protobuf:"bytes,3,opt,name=Data" json:"Data,omitempty"`
+type CreateRegistrantTX struct {
+	RegistrantName string `protobuf:"bytes,1,opt,name=RegistrantName" json:"RegistrantName,omitempty"`
+	PubKey         []byte `protobuf:"bytes,2,opt,name=PubKey,proto3" json:"PubKey,omitempty"`
+	Signature      []byte `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
+	Data           string `protobuf:"bytes,3,opt,name=Data" json:"Data,omitempty"`
 }
 
-func (m *RegisterIdentityTX) Reset()         { *m = RegisterIdentityTX{} }
-func (m *RegisterIdentityTX) String() string { return proto.CompactTextString(m) }
-func (*RegisterIdentityTX) ProtoMessage()    {}
+func (m *CreateRegistrantTX) Reset()         { *m = CreateRegistrantTX{} }
+func (m *CreateRegistrantTX) String() string { return proto.CompactTextString(m) }
+func (*CreateRegistrantTX) ProtoMessage()    {}
 
 type RegisterSpecTX struct {
-	SpecName  string `protobuf:"bytes,1,opt,name=SpecName" json:"SpecName,omitempty"`
-	OwnerName string `protobuf:"bytes,2,opt,name=OwnerName" json:"OwnerName,omitempty"`
-	Signature []byte `protobuf:"bytes,3,opt,name=Signature,proto3" json:"Signature,omitempty"`
-	Data      string `protobuf:"bytes,4,opt,name=Data" json:"Data,omitempty"`
+	SpecName       string `protobuf:"bytes,1,opt,name=SpecName" json:"SpecName,omitempty"`
+	RegistrantName string `protobuf:"bytes,2,opt,name=RegistrantName" json:"RegistrantName,omitempty"`
+	Signature      []byte `protobuf:"bytes,3,opt,name=Signature,proto3" json:"Signature,omitempty"`
+	Data           string `protobuf:"bytes,4,opt,name=Data" json:"Data,omitempty"`
 }
 
 func (m *RegisterSpecTX) Reset()         { *m = RegisterSpecTX{} }
