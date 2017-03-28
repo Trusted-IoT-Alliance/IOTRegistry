@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"regexp"
+	"runtime"
 	"testing"
 
 	proto "github.com/golang/protobuf/proto"
@@ -358,6 +360,16 @@ func checkQuery(t *testing.T, stub *shim.MockStub, function string, index string
 	return nil
 }
 
+func HandleError(t *testing.T, err error) (b bool) {
+	if err != nil {
+		_, fn, line, _ := runtime.Caller(1)
+		re := regexp.MustCompile("[^/]+$")
+		t.Errorf("\x1b[32m\n[ERROR] in %s\tat line: %d\n%v\x1b[0m\n\n", re.FindAllString(fn, -1)[0], line, err)
+		b = true
+	}
+	return
+}
+
 type registryTest struct {
 	privateKeyString string
 	pubKeyString     string
@@ -378,19 +390,19 @@ func TestIOTRegistryChaincode(t *testing.T) {
 
 	nonceBytes1, err := hex.DecodeString("1f7b169c846f218ab552fa82fbf86758")
 	if err != nil {
-		t.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err)
+		HandleError(t, fmt.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err))
 	}
 	nonceBytes2, err := hex.DecodeString("bf5c97d2d2a313e4f95957818a7b3edc")
 	if err != nil {
-		t.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err)
+		HandleError(t, fmt.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err))
 	}
 	nonceBytes3, err := hex.DecodeString("a492f2b8a67697c4f91d9b9332e82347")
 	if err != nil {
-		t.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err)
+		HandleError(t, fmt.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err))
 	}
 	nonceBytes4, err := hex.DecodeString("83de17bd7a25e0a9f6813976eadf26de")
 	if err != nil {
-		t.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err)
+		HandleError(t, fmt.Errorf("error decoding nonce hex string in TestIOTRegistryChaincode: %v", err))
 	}
 	var registryTestsSuccess = []registryTest{
 		{ /*private key  1*/ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20",
@@ -412,32 +424,32 @@ func TestIOTRegistryChaincode(t *testing.T) {
 	for _, test := range registryTestsSuccess {
 		err := registerOwner(t, stub, test.ownerName, test.data, test.privateKeyString, test.pubKeyString)
 		if err != nil {
-			t.Errorf("%v\n", err)
+			HandleError(t, fmt.Errorf("%v\n", err))
 			return
 		}
 		index := test.ownerName
 		err = checkQuery(t, stub, "owner", index, test)
 		if err != nil {
-			t.Errorf("%v\n", err)
+			HandleError(t, fmt.Errorf("%v\n", err))
 		}
 		err = registerThing(t, stub, test.nonceBytes, test.identities, test.ownerName, test.specName, test.data, test.privateKeyString)
 		if err != nil {
-			t.Errorf("%v\n", err)
+			HandleError(t, fmt.Errorf("%v\n", err))
 		}
 
 		index = hex.EncodeToString(test.nonceBytes)
 		err = checkQuery(t, stub, "thing", index, test)
 		if err != nil {
-			t.Errorf("%v\n", err)
+			HandleError(t, fmt.Errorf("%v\n", err))
 		}
 		err = registerSpec(t, stub, test.specName, test.ownerName, test.data, test.privateKeyString)
 		if err != nil {
-			t.Errorf("%v\n", err)
+			HandleError(t, fmt.Errorf("%v\n", err))
 		}
 		index = test.specName
 		err = checkQuery(t, stub, "spec", index, test)
 		if err != nil {
-			t.Errorf("%v\n", err)
+			HandleError(t, fmt.Errorf("%v\n", err))
 		}
 	}
 }
