@@ -332,12 +332,12 @@ func checkQuery(t *testing.T, stub *shim.MockStub, function string, index string
 			return fmt.Errorf("\nPubkey got       (%s)\nPubkey expected: (%s)\n", jsonMap["Pubkey"], expected.pubKeyString)
 		}
 	} else if function == "thing" {
-		aliases := make([]string, len(jsonMap["Alias"].([]interface{})))
-		for i, element := range jsonMap["Alias"].([]interface{}) {
+		aliases := make([]string, len(jsonMap["Aliases"].([]interface{})))
+		for i, element := range jsonMap["Aliases"].([]interface{}) {
 			aliases[i] = element.(string)
 		}
 		if !(reflect.DeepEqual(aliases, expected.identities)) {
-			return fmt.Errorf("\nAlias got       (%x)\nAlias expected: (%x)\n", jsonMap["Alias"], expected.identities)
+			return fmt.Errorf("\nAlias got       (%x)\nAlias expected: (%x)\n", jsonMap["Aliases"], expected.identities)
 		}
 		if jsonMap["RegistrantPubkey"] != expected.pubKeyString {
 			return fmt.Errorf("\nRegistrantPubkey got       (%s)\nRegistrantPubkey expected: (%s)\n", jsonMap["RegistrantPubkey"], expected.pubKeyString)

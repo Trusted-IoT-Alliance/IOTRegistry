@@ -256,7 +256,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		store := IOTRegistryStore.Thing{}
-		store.Alias = registerThingArgs.Identities
+		store.Aliases = registerThingArgs.Identities
 		store.RegistrantPubkey = registerThingArgs.RegistrantPubkey
 		store.Data = registerThingArgs.Data
 		store.SpecName = registerThingArgs.Spec

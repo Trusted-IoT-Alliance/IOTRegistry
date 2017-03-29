@@ -43,7 +43,7 @@ func (m *Alias) String() string { return proto.CompactTextString(m) }
 func (*Alias) ProtoMessage()    {}
 
 type Thing struct {
-	Alias            []string `protobuf:"bytes,1,rep,name=Alias" json:"Alias,omitempty"`
+	Aliases          []string `protobuf:"bytes,1,rep,name=Aliases" json:"Aliases,omitempty"`
 	RegistrantPubkey string   `protobuf:"bytes,2,opt,name=RegistrantPubkey" json:"RegistrantPubkey,omitempty"`
 	Data             string   `protobuf:"bytes,3,opt,name=Data" json:"Data,omitempty"`
 	SpecName         string   `protobuf:"bytes,4,opt,name=SpecName" json:"SpecName,omitempty"`
