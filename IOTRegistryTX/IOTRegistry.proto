@@ -3,7 +3,7 @@ syntax ="proto3";
 
 message RegisterThingTX {
     bytes Nonce =1;
-    repeated string Identities =2;
+    repeated string Aliases =2;
     string RegistrantPubkey =3;
     bytes Signature =4;
     string Data =5;

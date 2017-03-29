@@ -133,13 +133,13 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//marshall into store type. Then put that variable into the state
-		store := IOTRegistryStore.Identities{}
+		store := IOTRegistryStore.Registrant{}
 		store.RegistrantName = registerNameArgs.RegistrantName
 		store.RegistrantPubkey = registerNameArgs.RegistrantPubkey
 		storeBytes, err := proto.Marshal(&store)
 		if err != nil {
-			fmt.Printf("Error marshalling variable of type IOTRegistryStore.Identities{}: (%v)\n", err.Error())
-			return nil, fmt.Errorf("Error marshalling variable of type IOTRegistryStore.Identities{}: (%v)\n", err.Error())
+			fmt.Printf("Error marshalling variable of type IOTRegistryStore.Aliases{}: (%v)\n", err.Error())
+			return nil, fmt.Errorf("Error marshalling variable of type IOTRegistryStore.Aliases{}: (%v)\n", err.Error())
 		}
 
 		err = stub.PutState("RegistrantPubkey:"+hex.EncodeToString(registerNameArgs.RegistrantPubkey), storeBytes)
@@ -150,8 +150,8 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 	/*
 		registerThing does, essentially, two things.
 		1.	puts a "Thing:<Nonce>" state to the ledger, indexed by the nonce.
-		|		-a thing contains a string slice of identities, a RegistrantPubkey, an arbitrary string of data, and the name of a specification.
-		2.	for each element of the Identities string slice, puts an "Alias:<identity>" state to the ledger, indexed by identity.
+		|		-a thing contains a string slice of Aliases, a RegistrantPubkey, an arbitrary string of data, and the name of a specification.
+		2.	for each element of the Aliases string slice, puts an "Alias:<identity>" state to the ledger, indexed by identity.
 		|		-an Alias contains a nonce, which can be used to access its parent "thing"
 		TX struct: 		RegisterThingTX
 		Store structs: 	Things, Alias
@@ -202,15 +202,15 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			return nil, fmt.Errorf("RegistrantPubkey (%s) is not registered\n", registerThingArgs.RegistrantPubkey)
 		}
 
-		//check if any identities exist
-		//we're checking if any identities are registered as RegistrantPubkeys but not if they are registered as aliases
-		for _, identity := range registerThingArgs.Identities {
+		//check if any Aliases exist
+		//we're checking if any Aliases are registered as RegistrantPubkeys but not if they are registered as aliases
+		for _, identity := range registerThingArgs.Aliases {
 			aliasCheckBytes, err := stub.GetState("RegistrantPubkey:" + identity)
 			if err != nil {
 				fmt.Printf("Could not get identity: (%s) State\n", identity)
 				return nil, fmt.Errorf("Could not get identity: (%s) State\n", identity)
 			}
-			//throw error if any of the identities already exist
+			//throw error if any of the Aliases already exist
 			if len(aliasCheckBytes) != 0 {
 				fmt.Printf("RegistrantPubkey: (%s) is already in registry\n", identity)
 				return nil, fmt.Errorf("RegistrantPubkey: (%s) is already in registry\n", identity)
@@ -218,7 +218,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//retrieve state associated with owner name to get public key
-		ownerRegistration := IOTRegistryStore.Identities{}
+		ownerRegistration := IOTRegistryStore.Registrant{}
 		err = proto.Unmarshal(checkIDBytes, &ownerRegistration)
 		if err != nil {
 			fmt.Printf("Error unmarshalling RegistrantPubkey (%s) state (%v)", registerThingArgs.RegistrantPubkey, err.Error())
@@ -231,7 +231,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 		//TODO review later
 		message := registerThingArgs.RegistrantPubkey
-		for _, identity := range registerThingArgs.Identities {
+		for _, identity := range registerThingArgs.Aliases {
 			message += ":" + identity
 		}
 		message += ":" + registerThingArgs.Data
@@ -242,7 +242,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			return nil, fmt.Errorf("Error verifying signature (%s)", ownerSig)
 		}
 
-		for _, identity := range registerThingArgs.Identities {
+		for _, identity := range registerThingArgs.Aliases {
 
 			alias := IOTRegistryStore.Alias{}
 			alias.Nonce = registerThingArgs.Nonce
@@ -255,8 +255,8 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			stub.PutState("Alias:"+identity, aliasStoreBytes)
 		}
 
-		store := IOTRegistryStore.Things{}
-		store.Alias = registerThingArgs.Identities
+		store := IOTRegistryStore.Thing{}
+		store.Aliases = registerThingArgs.Aliases
 		store.RegistrantPubkey = registerThingArgs.RegistrantPubkey
 		store.Data = registerThingArgs.Data
 		store.SpecName = registerThingArgs.Spec
@@ -319,7 +319,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//retrieve state associated with owner name to get public key
-		ownerRegistration := IOTRegistryStore.Identities{}
+		ownerRegistration := IOTRegistryStore.Registrant{}
 		err = proto.Unmarshal(checkIDBytes, &ownerRegistration)
 		if err != nil {
 			return nil, err
@@ -354,11 +354,11 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 /* declares, initializes, and marshalls struct containing owner information to JSON */
 func RegistrantToJSON(RegistrantName string, pubKey []byte) ([]byte, error) {
-	type JSONIdentities struct {
+	type JSONAliases struct {
 		RegistrantName string
 		Pubkey         string
 	}
-	jsonOwner := JSONIdentities{}
+	jsonOwner := JSONAliases{}
 	jsonOwner.RegistrantName = RegistrantName
 	jsonOwner.Pubkey = hex.EncodeToString(pubKey)
 
@@ -385,7 +385,7 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 			return nil, fmt.Errorf("No argument specified\n")
 		}
 
-		owner := IOTRegistryStore.Identities{}
+		owner := IOTRegistryStore.Registrant{}
 
 		RegistrantPubkey := args[0]
 		ownerBytes, err := stub.GetState("RegistrantPubkey:" + RegistrantPubkey)
@@ -413,7 +413,7 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 		if len(args) != 1 {
 			return nil, fmt.Errorf("No argument specified\n")
 		}
-		thing := IOTRegistryStore.Things{}
+		thing := IOTRegistryStore.Thing{}
 		thingNonce := args[0]
 		thingBytes, err := stub.GetState("Thing:" + thingNonce)
 		if err != nil {
