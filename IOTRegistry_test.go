@@ -94,14 +94,14 @@ func createRegistrantSig(registrantName string, registrantPubkey string, data st
 /*
 	generates a signature for registering a thing based on private key and message
 */
-func generateRegisterThingSig(registrantPubkey string, identities []string, spec string, data string, privateKeyStr string) (string, error) {
+func generateRegisterThingSig(registrantPubkey string, aliases []string, spec string, data string, privateKeyStr string) (string, error) {
 	privKeyByte, err := hex.DecodeString(privateKeyStr)
 	if err != nil {
 		return "", fmt.Errorf("error decoding hex encoded private key (%s)", privateKeyStr)
 	}
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyByte)
 	message := registrantPubkey
-	for _, identity := range identities {
+	for _, identity := range aliases {
 		message += ":" + identity
 	}
 	message += ":" + data
@@ -179,20 +179,20 @@ func registerOwner(t *testing.T, stub *shim.MockStub, name string, data string,
 }
 
 /*
-	registers a store type "Things" to ledger and an "Alias" store type for each member of string slice identities by calling to Invoke()
+	registers a store type "Things" to ledger and an "Alias" store type for each member of string slice aliases by calling to Invoke()
 */
-func registerThing(t *testing.T, stub *shim.MockStub, nonce []byte, identities []string,
+func registerThing(t *testing.T, stub *shim.MockStub, nonce []byte, aliases []string,
 	registrantPubKey string, spec string, data string, privateKeyString string) error {
 
 	thing := IOTRegistryTX.RegisterThingTX{}
 
 	thing.Nonce = nonce
-	thing.Identities = identities
+	thing.Aliases = aliases
 	thing.RegistrantPubkey = registrantPubKey
 	thing.Spec = spec
 
 	//create signature
-	hexThingSig, err := generateRegisterThingSig(registrantPubKey, identities, spec, data, privateKeyString)
+	hexThingSig, err := generateRegisterThingSig(registrantPubKey, aliases, spec, data, privateKeyString)
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
@@ -336,8 +336,8 @@ func checkQuery(t *testing.T, stub *shim.MockStub, function string, index string
 		for i, element := range jsonMap["Aliases"].([]interface{}) {
 			aliases[i] = element.(string)
 		}
-		if !(reflect.DeepEqual(aliases, expected.identities)) {
-			return fmt.Errorf("\nAlias got       (%x)\nAlias expected: (%x)\n", jsonMap["Aliases"], expected.identities)
+		if !(reflect.DeepEqual(aliases, expected.aliases)) {
+			return fmt.Errorf("\nAlias got       (%x)\nAlias expected: (%x)\n", jsonMap["Aliases"], expected.aliases)
 		}
 		if jsonMap["RegistrantPubkey"] != expected.pubKeyString {
 			return fmt.Errorf("\nRegistrantPubkey got       (%s)\nRegistrantPubkey expected: (%s)\n", jsonMap["RegistrantPubkey"], expected.pubKeyString)
@@ -376,7 +376,7 @@ type registryTest struct {
 	data             string
 	nonce            string
 	specName         string
-	identities       []string
+	aliases          []string
 }
 
 /*
@@ -419,7 +419,7 @@ func TestIOTRegistryChaincode(t *testing.T) {
 		if err != nil {
 			HandleError(t, fmt.Errorf("Error decoding nonce bytes: %s", err.Error()))
 		}
-		err = registerThing(t, stub, nonceBytes, test.identities, test.pubKeyString, test.specName, test.data, test.privateKeyString)
+		err = registerThing(t, stub, nonceBytes, test.aliases, test.pubKeyString, test.specName, test.data, test.privateKeyString)
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))
 		}
