@@ -84,7 +84,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 	switch function {
 	/*
-		registerOwner puts a "RegistrantPubkey: <RegistrantPubkey>" state to the ledger, indexed by the RegistrantPubkey.
+		registerOwner puts a "RegistrantPubkey:<RegistrantPubkey>" state to the ledger, indexed by the RegistrantPubkey.
 		TX struct: 		CreateRegistrantTX
 		Store struct: 	Owner
 	*/
@@ -110,7 +110,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			return nil, fmt.Errorf("length of Signature (%s) is zero\n", registerNameArgs.Signature)
 		}
 		//check if name is available
-		registrantBytes, err := stub.GetState("RegistrantPubkey: " + hex.EncodeToString(registerNameArgs.RegistrantPubkey))
+		registrantBytes, err := stub.GetState("RegistrantPubkey:" + hex.EncodeToString(registerNameArgs.RegistrantPubkey))
 		if err != nil {
 			fmt.Printf("Could not get RegistrantPubkey (%s) State\n", registerNameArgs.RegistrantPubkey)
 			return nil, fmt.Errorf("Could not get RegistrantPubkey (%s) State\n", registerNameArgs.RegistrantPubkey)
@@ -142,16 +142,16 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			return nil, fmt.Errorf("Error marshalling variable of type IOTRegistryStore.Identities{}: (%v)\n", err.Error())
 		}
 
-		err = stub.PutState("RegistrantPubkey: "+hex.EncodeToString(registerNameArgs.RegistrantPubkey), storeBytes)
+		err = stub.PutState("RegistrantPubkey:"+hex.EncodeToString(registerNameArgs.RegistrantPubkey), storeBytes)
 		if err != nil {
 			fmt.Printf("error putting RegistrantPubkey (%s) to ledger: (%v)\n", registerNameArgs.RegistrantPubkey, err.Error())
 			return nil, fmt.Errorf("error putting RegistrantPubkey (%s) to ledger: (%v)\n", registerNameArgs.RegistrantPubkey, err.Error())
 		}
 	/*
 		registerThing does, essentially, two things.
-		1.	puts a "Thing: <Nonce>" state to the ledger, indexed by the nonce.
+		1.	puts a "Thing:<Nonce>" state to the ledger, indexed by the nonce.
 		|		-a thing contains a string slice of identities, a RegistrantPubkey, an arbitrary string of data, and the name of a specification.
-		2.	for each element of the Identities string slice, puts an "Alias: <identity>" state to the ledger, indexed by identity.
+		2.	for each element of the Identities string slice, puts an "Alias:<identity>" state to the ledger, indexed by identity.
 		|		-an Alias contains a nonce, which can be used to access its parent "thing"
 		TX struct: 		RegisterThingTX
 		Store structs: 	Things, Alias
@@ -177,7 +177,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//check if nonce already exists
-		nonceCheckBytes, err := stub.GetState("Thing: " + hex.EncodeToString(registerThingArgs.Nonce))
+		nonceCheckBytes, err := stub.GetState("Thing:" + hex.EncodeToString(registerThingArgs.Nonce))
 		if err != nil {
 			fmt.Printf("Could not get Nonce (%s) State\n", hex.EncodeToString(registerThingArgs.Nonce))
 			return nil, fmt.Errorf("Could not get Nonce (%s) State\n", hex.EncodeToString(registerThingArgs.Nonce))
@@ -190,7 +190,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//check if owner is valid id (name exists in registry)
-		checkIDBytes, err := stub.GetState("RegistrantPubkey: " + registerThingArgs.RegistrantPubkey)
+		checkIDBytes, err := stub.GetState("RegistrantPubkey:" + registerThingArgs.RegistrantPubkey)
 		if err != nil {
 			fmt.Printf("Failed to look up RegistrantPubkey (%s) \n", registerThingArgs.RegistrantPubkey)
 			return nil, fmt.Errorf("Failed to look up RegistrantPubkey (%s) \n", registerThingArgs.RegistrantPubkey)
@@ -205,7 +205,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		//check if any identities exist
 		//we're checking if any identities are registered as RegistrantPubkeys but not if they are registered as aliases
 		for _, identity := range registerThingArgs.Identities {
-			aliasCheckBytes, err := stub.GetState("RegistrantPubkey: " + identity)
+			aliasCheckBytes, err := stub.GetState("RegistrantPubkey:" + identity)
 			if err != nil {
 				fmt.Printf("Could not get identity: (%s) State\n", identity)
 				return nil, fmt.Errorf("Could not get identity: (%s) State\n", identity)
@@ -252,7 +252,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 				fmt.Printf("Error marshalling alias (%v) into bytes", alias)
 				return nil, fmt.Errorf("Error marshalling alias (%v) into bytes\n", alias)
 			}
-			stub.PutState("Alias: "+identity, aliasStoreBytes)
+			stub.PutState("Alias:"+identity, aliasStoreBytes)
 		}
 
 		store := IOTRegistryStore.Things{}
@@ -265,13 +265,13 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			fmt.Printf("error marshalling type IOTRegistry store :(%v)\n", err.Error())
 			return nil, fmt.Errorf("error marshalling type IOTRegistry store :(%v)\n", err.Error())
 		}
-		err = stub.PutState("Thing: "+hex.EncodeToString(registerThingArgs.Nonce), storeBytes)
+		err = stub.PutState("Thing:"+hex.EncodeToString(registerThingArgs.Nonce), storeBytes)
 		if err != nil {
 			fmt.Printf("Error putting thing state :(%v)", err.Error())
 			return nil, fmt.Errorf("Error putting thing state :(%v)", err.Error())
 		}
 	/*
-		registerSpec puts a "Spec: <SpecName>" state to the ledger, indexed by the spec name.
+		registerSpec puts a "Spec:<SpecName>" state to the ledger, indexed by the spec name.
 		TX struct: 		RegisterSpecTX
 		Store structs: 	Spec
 	*/
@@ -293,7 +293,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//check if spec already exists
-		specNameCheckBytes, err := stub.GetState("Spec: " + specArgs.SpecName)
+		specNameCheckBytes, err := stub.GetState("Spec:" + specArgs.SpecName)
 		if err != nil {
 			fmt.Printf("Could not get Spec State\n")
 			return nil, fmt.Errorf("Could not get Spec State\n")
@@ -306,7 +306,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//check if owner is valid id (name exists in registry)
-		checkIDBytes, err := stub.GetState("RegistrantPubkey: " + specArgs.RegistrantPubkey)
+		checkIDBytes, err := stub.GetState("RegistrantPubkey:" + specArgs.RegistrantPubkey)
 		if err != nil {
 			fmt.Printf("Failed to look up RegistrantPubkey\n")
 			return nil, fmt.Errorf("Failed to look up RegistrantPubkey (%s)\n", specArgs.RegistrantPubkey)
@@ -343,7 +343,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		if err != nil {
 			fmt.Println(err)
 		}
-		err = stub.PutState("Spec: "+specArgs.SpecName, storeBytes)
+		err = stub.PutState("Spec:"+specArgs.SpecName, storeBytes)
 		if err != nil {
 			fmt.Printf(err.Error())
 			return nil, err
@@ -388,7 +388,7 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 		owner := IOTRegistryStore.Identities{}
 
 		RegistrantPubkey := args[0]
-		ownerBytes, err := stub.GetState("RegistrantPubkey: " + RegistrantPubkey)
+		ownerBytes, err := stub.GetState("RegistrantPubkey:" + RegistrantPubkey)
 		if err != nil {
 			fmt.Printf(err.Error())
 			return nil, err
@@ -415,7 +415,7 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 		}
 		thing := IOTRegistryStore.Things{}
 		thingNonce := args[0]
-		thingBytes, err := stub.GetState("Thing: " + thingNonce)
+		thingBytes, err := stub.GetState("Thing:" + thingNonce)
 		if err != nil {
 			fmt.Printf(err.Error())
 			return nil, err
@@ -444,7 +444,7 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 		spec := IOTRegistryStore.Spec{}
 		specName := args[0]
 
-		specBytes, err := stub.GetState("Spec: " + specName)
+		specBytes, err := stub.GetState("Spec:" + specName)
 		if err != nil {
 			fmt.Printf(err.Error())
 			return nil, err
