@@ -8,14 +8,16 @@
 
 syntax ="proto3";
 
-message Identities{
+message Registrant {
   string RegistrantName =1;
   bytes RegistrantPubkey = 3;
 }
+
 message Alias{
   bytes Nonce =1;
 }
-message Things{
+
+message Thing{
   repeated string Alias =1;
   string RegistrantPubkey =2;
   string Data =3;

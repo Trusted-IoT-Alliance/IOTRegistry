@@ -133,7 +133,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//marshall into store type. Then put that variable into the state
-		store := IOTRegistryStore.Identities{}
+		store := IOTRegistryStore.Registrant{}
 		store.RegistrantName = registerNameArgs.RegistrantName
 		store.RegistrantPubkey = registerNameArgs.RegistrantPubkey
 		storeBytes, err := proto.Marshal(&store)
@@ -218,7 +218,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//retrieve state associated with owner name to get public key
-		ownerRegistration := IOTRegistryStore.Identities{}
+		ownerRegistration := IOTRegistryStore.Registrant{}
 		err = proto.Unmarshal(checkIDBytes, &ownerRegistration)
 		if err != nil {
 			fmt.Printf("Error unmarshalling RegistrantPubkey (%s) state (%v)", registerThingArgs.RegistrantPubkey, err.Error())
@@ -255,7 +255,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			stub.PutState("Alias:"+identity, aliasStoreBytes)
 		}
 
-		store := IOTRegistryStore.Things{}
+		store := IOTRegistryStore.Thing{}
 		store.Alias = registerThingArgs.Identities
 		store.RegistrantPubkey = registerThingArgs.RegistrantPubkey
 		store.Data = registerThingArgs.Data
@@ -319,7 +319,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//retrieve state associated with owner name to get public key
-		ownerRegistration := IOTRegistryStore.Identities{}
+		ownerRegistration := IOTRegistryStore.Registrant{}
 		err = proto.Unmarshal(checkIDBytes, &ownerRegistration)
 		if err != nil {
 			return nil, err
@@ -385,7 +385,7 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 			return nil, fmt.Errorf("No argument specified\n")
 		}
 
-		owner := IOTRegistryStore.Identities{}
+		owner := IOTRegistryStore.Registrant{}
 
 		RegistrantPubkey := args[0]
 		ownerBytes, err := stub.GetState("RegistrantPubkey:" + RegistrantPubkey)
@@ -413,7 +413,7 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 		if len(args) != 1 {
 			return nil, fmt.Errorf("No argument specified\n")
 		}
-		thing := IOTRegistryStore.Things{}
+		thing := IOTRegistryStore.Thing{}
 		thingNonce := args[0]
 		thingBytes, err := stub.GetState("Thing:" + thingNonce)
 		if err != nil {
