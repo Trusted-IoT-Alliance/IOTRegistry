@@ -75,7 +75,7 @@ func randString(n int, kindOfString string) string {
 /*
 	generates a signature for creating a registrant based on private key and message
 */
-func generateRegisterNameSig(registrantName string, registrantPubkey string, data string, privateKeyStr string) (string, error) {
+func createRegistrantSig(registrantName string, registrantPubkey string, data string, privateKeyStr string) (string, error) {
 	privKeyByte, err := hex.DecodeString(privateKeyStr)
 	if err != nil {
 		return "", fmt.Errorf("error decoding hex encoded private key (%s)", privateKeyStr)
@@ -160,7 +160,7 @@ func registerOwner(t *testing.T, stub *shim.MockStub, name string, data string,
 	registrant.Data = data
 
 	//create signature
-	hexOwnerSig, err := generateRegisterNameSig(registrant.RegistrantName, hex.EncodeToString(registrant.RegistrantPubkey), registrant.Data, privateKeyString)
+	hexOwnerSig, err := createRegistrantSig(registrant.RegistrantName, hex.EncodeToString(registrant.RegistrantPubkey), registrant.Data, privateKeyString)
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
