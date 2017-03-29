@@ -26,7 +26,7 @@ var _ = math.Inf
 
 type RegisterThingTX struct {
 	Nonce            []byte   `protobuf:"bytes,1,opt,name=Nonce,proto3" json:"Nonce,omitempty"`
-	Identities       []string `protobuf:"bytes,2,rep,name=Identities" json:"Identities,omitempty"`
+	Aliases          []string `protobuf:"bytes,2,rep,name=Aliases" json:"Aliases,omitempty"`
 	RegistrantPubkey string   `protobuf:"bytes,3,opt,name=RegistrantPubkey" json:"RegistrantPubkey,omitempty"`
 	Signature        []byte   `protobuf:"bytes,4,opt,name=Signature,proto3" json:"Signature,omitempty"`
 	Data             string   `protobuf:"bytes,5,opt,name=Data" json:"Data,omitempty"`

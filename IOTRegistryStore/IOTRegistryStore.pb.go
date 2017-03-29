@@ -9,9 +9,9 @@ It is generated from these files:
 	IOTRegistryStore.proto
 
 It has these top-level messages:
-	Identities
+	Registrant
 	Alias
-	Things
+	Thing
 	Spec
 */
 package IOTRegistryStore
@@ -25,14 +25,14 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-type Identities struct {
+type Registrant struct {
 	RegistrantName   string `protobuf:"bytes,1,opt,name=RegistrantName" json:"RegistrantName,omitempty"`
 	RegistrantPubkey []byte `protobuf:"bytes,3,opt,name=RegistrantPubkey,proto3" json:"RegistrantPubkey,omitempty"`
 }
 
-func (m *Identities) Reset()         { *m = Identities{} }
-func (m *Identities) String() string { return proto.CompactTextString(m) }
-func (*Identities) ProtoMessage()    {}
+func (m *Registrant) Reset()         { *m = Registrant{} }
+func (m *Registrant) String() string { return proto.CompactTextString(m) }
+func (*Registrant) ProtoMessage()    {}
 
 type Alias struct {
 	Nonce []byte `protobuf:"bytes,1,opt,name=Nonce,proto3" json:"Nonce,omitempty"`
@@ -42,16 +42,16 @@ func (m *Alias) Reset()         { *m = Alias{} }
 func (m *Alias) String() string { return proto.CompactTextString(m) }
 func (*Alias) ProtoMessage()    {}
 
-type Things struct {
-	Alias            []string `protobuf:"bytes,1,rep,name=Alias" json:"Alias,omitempty"`
+type Thing struct {
+	Aliases          []string `protobuf:"bytes,1,rep,name=Aliases" json:"Aliases,omitempty"`
 	RegistrantPubkey string   `protobuf:"bytes,2,opt,name=RegistrantPubkey" json:"RegistrantPubkey,omitempty"`
 	Data             string   `protobuf:"bytes,3,opt,name=Data" json:"Data,omitempty"`
 	SpecName         string   `protobuf:"bytes,4,opt,name=SpecName" json:"SpecName,omitempty"`
 }
 
-func (m *Things) Reset()         { *m = Things{} }
-func (m *Things) String() string { return proto.CompactTextString(m) }
-func (*Things) ProtoMessage()    {}
+func (m *Thing) Reset()         { *m = Thing{} }
+func (m *Thing) String() string { return proto.CompactTextString(m) }
+func (*Thing) ProtoMessage()    {}
 
 type Spec struct {
 	RegistrantPubkey string `protobuf:"bytes,2,opt,name=RegistrantPubkey" json:"RegistrantPubkey,omitempty"`
