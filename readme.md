@@ -43,6 +43,7 @@ alt="main" border="10"/>
 createRegistrant does the following:
 1. Unmarshall arguments protobuf into createRegistrant struct type
 	createRegistrant struct looks like this:  
+
 <img src="https://github.com/InternetofTrustedThings/IOTRegistry/blob/master/images/createRegistrantTX.png" 
 alt="main" border="10"/>
 2. Check that inputs exist for name, public key, and signature.
@@ -93,29 +94,34 @@ alt="main" border="10"/>
 
 #### registerSpec
 
-An IOT device can have a specification that defines various information about the device. In particular, the spec defines the schema of the data field of the struct which represents the device.
+An IOT device can have a specification that provides information about the device. In particular, the specification defines the schema which governs the data field of the struct representing the device. 
 
-To register a spec, the following specs are required:
-1. 
+<img src="https://github.com/InternetofTrustedThings/IOTRegistry/blob/master/images/registerSpec.png" 
+alt="main" border="10"/>  
 
+Registering a spec involves the following steps:
+1. unmarshall arguments into s registerSpecTX struct, which looks like this:
+<img src="https://github.com/InternetofTrustedThings/IOTRegistry/blob/master/images/registerSpecTX.png" 
+alt="main" border="10"/>  
+2. Verify that necessary arguments were input, that the spec does not already exist, and that the signature is valid.
+3. Marshal arguments into protobuf of type Spec, which looks like this:
+<img src="https://github.com/InternetofTrustedThings/IOTRegistry/blob/master/images/registerSpecStore.png" 
+alt="main" border="10"/>  
+
+  
 ### Query
-Query retrieves a state from the ledger and returns the data in JSON format.  
+Query retrieves a state from the ledger and returns data in JSON.  
   
 ### Signature Generation
 The three signature generation functions are in IOTRegistery_test.go:  
 generateRegisterNameSig, generateRegisterThingSig, and generateRegisterSpecSig.  
   
-## Usage
-
-It is worth noting that the import paths may require some setup. Essentially, the folder paths to the cloned repository should be the same as the paths in the import statements at the top of IOTRegistry.go and IOTRegistry_test.go.  
+## Testing
   
-IOTRegistry_test.go is a good place to look in order to understand how interaction with this chaincode can occur.  
-In particular, TestIOTRegistryChaincode(), located around line 375 of IOTRegistry_test.go, displays exactly how to interact with the chaincode.  
+IOTRegistry_test.go is a good place to look in order to understand how interaction with this chaincode can occur.   
   
 First, bst takes the value of a new IOTRegistry type. Stub is declared, which is the primary means of interfacing with the ledger. Then, for each struct of type registryTest, a full test is run which includes registering an owner, a thing, and a spec, and performing a query for each transaction to validate the output.  
   
-
-## Testing
 
 ## Authors
 
