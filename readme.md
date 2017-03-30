@@ -10,7 +10,7 @@ The primary file for this chaincode is IOTRegistry.go. Invoke() and Query() are 
 Invoke is used to create a transaction. The three kinds of transactions are "registerOwner", "registerThing", and "registerSpec".  
   
 Invoke receives a collection of arguments marshalled into a protobuffer, which are formatted according to the kind of transaction to be performed. The input struct for each transaction is defined in IOTRegistryTX/IOTRegistry.pb.go.  
-  
+   
 For each kind of transaction, Invoke() does the following:  
 1. Unmarshals the protobuffer into the appropriate structure  
 2. Performs various checks to ensure that the input and attempted transaction are valid.  
