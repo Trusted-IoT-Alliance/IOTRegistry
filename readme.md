@@ -28,7 +28,6 @@ This is a collection of arguments marshalled into a protobuffer, which are forma
 ### Transactions
 The three kinds of transactions are "createRegistrant", "registerThing", and "registerSpec".  
 
->>>>>>> upstream/master
 For each kind of transaction, Invoke() does the following:  
 1. Unmarshals the protobuffer into the appropriate structure  
 2. Performs various checks to ensure that the input and attempted transaction are valid.  
