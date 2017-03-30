@@ -84,7 +84,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 
 	switch function {
 	/*
-		registerOwner puts a "RegistrantPubkey:<RegistrantPubkey>" state to the ledger, indexed by the RegistrantPubkey.
+		createRegistrant puts a "RegistrantPubkey:<RegistrantPubkey>" state to the ledger, indexed by the RegistrantPubkey.
 		TX struct: 		CreateRegistrantTX
 		Store struct: 	Owner
 	*/
@@ -109,14 +109,14 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			fmt.Printf("length of Signature (%s) is zero\n", registerNameArgs.Signature)
 			return nil, fmt.Errorf("length of Signature (%s) is zero\n", registerNameArgs.Signature)
 		}
-		//check if name is available
+		//check if pubkey is available
 		registrantBytes, err := stub.GetState("RegistrantPubkey:" + hex.EncodeToString(registerNameArgs.RegistrantPubkey))
 		if err != nil {
 			fmt.Printf("Could not get RegistrantPubkey (%s) State\n", registerNameArgs.RegistrantPubkey)
 			return nil, fmt.Errorf("Could not get RegistrantPubkey (%s) State\n", registerNameArgs.RegistrantPubkey)
 		}
 
-		//if name unavailable
+		//if pubkey unavailable
 		if len(registrantBytes) != 0 {
 			fmt.Printf("RegistrantPubkey (%s) is unavailable\n", registerNameArgs.RegistrantPubkey)
 			return nil, fmt.Errorf("RegistrantPubkey (%s) is unavailable\n", registerNameArgs.RegistrantPubkey)
@@ -217,15 +217,10 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			}
 		}
 
-		//retrieve state associated with owner name to get public key
-		ownerRegistration := IOTRegistryStore.Registrant{}
-		err = proto.Unmarshal(checkIDBytes, &ownerRegistration)
+		ownerPubKeyBytes, err := hex.DecodeString(registerThingArgs.RegistrantPubkey)
 		if err != nil {
-			fmt.Printf("Error unmarshalling RegistrantPubkey (%s) state (%v)", registerThingArgs.RegistrantPubkey, err.Error())
-			return nil, fmt.Errorf("Error unmarshalling RegistrantPubkey (%s) state (%v)", registerThingArgs.RegistrantPubkey, err.Error())
+			return nil, fmt.Errorf("Error decoding registrantPubkey: %s", err.Error())
 		}
-
-		ownerPubKeyBytes := ownerRegistration.RegistrantPubkey
 
 		ownerSig := registerThingArgs.Signature
 
@@ -305,28 +300,23 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			return nil, fmt.Errorf("SpecName (%s) is unavailable\n", specArgs.SpecName)
 		}
 
-		//check if owner is valid id (name exists in registry)
+		//check if registrant is valid id (pubkey exists in registry)
 		checkIDBytes, err := stub.GetState("RegistrantPubkey:" + specArgs.RegistrantPubkey)
 		if err != nil {
 			fmt.Printf("Failed to look up RegistrantPubkey\n")
 			return nil, fmt.Errorf("Failed to look up RegistrantPubkey (%s)\n", specArgs.RegistrantPubkey)
 		}
 
-		//if owner is not registered name
+		//if registrant does not exist
 		if len(checkIDBytes) == 0 {
 			fmt.Printf("RegistrantPubkey is not registered\n")
 			return nil, fmt.Errorf("RegistrantPubkey is not registered %s\n", specArgs.RegistrantPubkey)
 		}
 
-		//retrieve state associated with owner name to get public key
-		ownerRegistration := IOTRegistryStore.Registrant{}
-		err = proto.Unmarshal(checkIDBytes, &ownerRegistration)
+		ownerPubKeyBytes, err := hex.DecodeString(specArgs.RegistrantPubkey)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Error decoding registrantPubkey: %s", err.Error())
 		}
-
-		ownerPubKeyBytes := ownerRegistration.RegistrantPubkey
-
 		ownerSig := specArgs.Signature
 
 		//TODO review later
