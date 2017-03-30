@@ -88,7 +88,7 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		TX struct: 		CreateRegistrantTX
 		Store struct: 	Owner
 	*/
-	case "registerOwner":
+	case "createRegistrant":
 		//declare and initialize RegisterIdentity struct
 		registerNameArgs := IOTRegistryTX.CreateRegistrantTX{}
 		err = proto.Unmarshal(argsBytes, &registerNameArgs)

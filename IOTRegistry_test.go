@@ -147,7 +147,7 @@ func checkInit(t *testing.T, stub *shim.MockStub, args []string) {
 /*
 	register a store type "Identites" to ledger by calling to Invoke()
 */
-func registerOwner(t *testing.T, stub *shim.MockStub, name string, data string,
+func createRegistrant(t *testing.T, stub *shim.MockStub, name string, data string,
 	privateKeyString string, pubKeyString string) error {
 
 	registrant := IOTRegistryTX.CreateRegistrantTX{}
@@ -171,7 +171,7 @@ func registerOwner(t *testing.T, stub *shim.MockStub, name string, data string,
 
 	registrantBytes, err := proto.Marshal(&registrant)
 	registrantBytesStr := hex.EncodeToString(registrantBytes)
-	_, err = stub.MockInvoke("3", "registerOwner", []string{registrantBytesStr})
+	_, err = stub.MockInvoke("3", "createRegistrant", []string{registrantBytesStr})
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
@@ -405,7 +405,7 @@ func TestIOTRegistryChaincode(t *testing.T) {
 			"Cassandra", "test data 3", "83de17bd7a25e0a9f6813976eadf26de", "test spec 4", []string{"ident7", "ident8", "ident9"}},
 	}
 	for _, test := range registryTestsSuccess {
-		err := registerOwner(t, stub, test.RegistrantName, test.data, test.privateKeyString, test.pubKeyString)
+		err := createRegistrant(t, stub, test.RegistrantName, test.data, test.privateKeyString, test.pubKeyString)
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))
 			return
