@@ -15,7 +15,7 @@ import (
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 
 	"github.com/btcsuite/btcd/btcec"
-	IOTRegistryTX "github.com/robertnowell/IOTRegistry/IOTRegistryTX"
+	IOTRegistryTX "github.com/InternetofTrustedThings/IOTRegistry/IOTRegistryTX"
 )
 
 /*

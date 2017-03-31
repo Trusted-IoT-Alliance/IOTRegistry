@@ -19,8 +19,8 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	proto "github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
-	"github.com/robertnowell/IOTRegistry/IOTRegistryStore"
-	IOTRegistryTX "github.com/robertnowell/IOTRegistry/IOTRegistryTX"
+	"github.com/InternetofTrustedThings/IOTRegistry/IOTRegistryStore"
+	IOTRegistryTX "github.com/InternetofTrustedThings/IOTRegistry/IOTRegistryTX"
 )
 
 type IOTRegistry struct {
