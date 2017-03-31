@@ -370,7 +370,7 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 		An "owner" query requests information stored in the ledger about a particular owner.
 		If the owner is registered, the JSON will contain the owner's name and public key.
 	*/
-	case "registrant":
+	case "owner":
 		if len(args) != 1 {
 			return nil, fmt.Errorf("No argument specified\n")
 		}
@@ -393,6 +393,7 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 			return nil, err
 		}
 		jsonBytes, err := RegistrantToJSON(owner.RegistrantName, owner.RegistrantPubkey)
+		fmt.Printf("\n\n\nJSONBYTES from query: (%s)\n\n", string(jsonBytes))
 		return jsonBytes, err
 		/*
 			A "thing" query requests information stored in the ledger about a particular thing.
