@@ -368,7 +368,7 @@ func TestIOTRegistryChaincode(t *testing.T) {
 			return
 		}
 		index := test.pubKeyString
-		err = checkQuery(t, stub, "registrant", index, test)
+		err = checkQuery(t, stub, "owner", index, test)
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))
 		}
