@@ -370,7 +370,7 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 		An "owner" query requests information stored in the ledger about a particular owner.
 		If the owner is registered, the JSON will contain the owner's name and public key.
 	*/
-	case "owner":
+	case "registrant":
 		if len(args) != 1 {
 			return nil, fmt.Errorf("No argument specified\n")
 		}
