@@ -133,9 +133,6 @@ func generateRegisterSpecSig(specName string, registrantPubkey string, data stri
 	return hex.EncodeToString(sig.Serialize()), nil
 }
 
-/*
-	checks if Init() works properly
-*/
 func checkInit(t *testing.T, stub *shim.MockStub, args []string) {
 	_, err := stub.MockInit("1", "", args)
 	if err != nil {
@@ -241,46 +238,6 @@ func registerSpec(t *testing.T, stub *shim.MockStub, specName string, registrant
 		return fmt.Errorf("%v", err)
 	}
 	return nil
-}
-
-/*
-	//To create new private and public keys
-	privKeyString, err := newPrivateKeyString()
-	if err != nil {
-		fmt.Println(err)
-	}
-	pubKeyString, err := getPubKeyString(privKeyString)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Printf("new privKey: (%s)\nnew pubKey: %s\n", privKeyString, pubKeyString)
-*/
-
-/*
-	generates and returns SHA256 private key string
-*/
-func newPrivateKeyString() (string, error) {
-	privKey, err := btcec.NewPrivateKey(btcec.S256())
-	if err != nil {
-		return "", fmt.Errorf("Error generating private key\n")
-	}
-	privKeyBytes := privKey.Serialize()
-	privKeyString := hex.EncodeToString(privKeyBytes)
-	return privKeyString, nil
-}
-
-/*
-	generates and returns SHA256 public key string from private key string input
-*/
-func getPubKeyString(privKeyString string) (string, error) {
-	privKeyBytes, err := hex.DecodeString(privKeyString)
-	if err != nil {
-		return "", fmt.Errorf("error decoding private key string (%s)", privKeyString)
-	}
-	_, pubKey := btcec.PrivKeyFromBytes(btcec.S256(), privKeyBytes)
-	pubKeyBytes := pubKey.SerializeCompressed()
-	pubkKeyString := hex.EncodeToString(pubKeyBytes)
-	return pubkKeyString, nil
 }
 
 /*
@@ -390,19 +347,19 @@ func TestIOTRegistryChaincode(t *testing.T) {
 	var registryTestsSuccess = []registryTest{
 		{ /*private key  1*/ "94d7fe7308a452fdf019a0424d9c48ba9b66bdbca565c6fa3b1bf9c646ebac20",
 			/*public key 1*/ "02ca4a8c7dc5090f924cde2264af240d76f6d58a5d2d15c8c5f59d95c70bd9e4dc",
-			"Alice", "test data", "1f7b169c846f218ab552fa82fbf86758", "test spec", []string{"Foo", "Bar"}},
+			"Alice", "test data" /*nonce:*/, "1f7b169c846f218ab552fa82fbf86758", "test spec", []string{"Foo", "Bar"}},
 
 		{ /*private key  2*/ "246d4fa59f0baa3329d3908659936ac2ac9c3539dc925977759cffe3c6316e19",
 			/*public key 2*/ "03442b817ad2154766a8f5192fc5a7506b7e52cdbf4fcf8e1bc33764698443c3c9",
-			"Gerald", "test data 1", "bf5c97d2d2a313e4f95957818a7b3edc", "test spec 2", []string{"one", "two", "three"}},
+			"Gerald", "test data 1" /*nonce:*/, "bf5c97d2d2a313e4f95957818a7b3edc", "test spec 2", []string{"one", "two", "three"}},
 
 		{ /*private key  3*/ "166cc93d9eadb573b329b5993b9671f1521679cea90fe52e398e66c1d6373abf",
 			/*public key 3*/ "02242a1c19bc831cd95a9e5492015043250cbc17d0eceb82612ce08736b8d753a6",
-			"Bob", "test data 2", "a492f2b8a67697c4f91d9b9332e82347", "test spec 3", []string{"ident4", "ident5", "ident6"}},
+			"Bob", "test data 2" /*nonce:*/, "a492f2b8a67697c4f91d9b9332e82347", "test spec 3", []string{"ident4", "ident5", "ident6"}},
 
 		{ /*private key  4*/ "01b756f231c72747e024ceee41703d9a7e3ab3e68d9b73d264a0196bd90acedf",
 			/*public key 4*/ "020f2b95263c4b3be740b7b3fda4c2f4113621c1a7a360713a2540eeb808519cd6",
-			"Cassandra", "test data 3", "83de17bd7a25e0a9f6813976eadf26de", "test spec 4", []string{"ident7", "ident8", "ident9"}},
+			"Cassandra", "test data 3" /*nonce:*/, "83de17bd7a25e0a9f6813976eadf26de", "test spec 4", []string{"ident7", "ident8", "ident9"}},
 	}
 	for _, test := range registryTestsSuccess {
 		err := createRegistrant(t, stub, test.RegistrantName, test.data, test.privateKeyString, test.pubKeyString)
@@ -411,7 +368,7 @@ func TestIOTRegistryChaincode(t *testing.T) {
 			return
 		}
 		index := test.pubKeyString
-		err = checkQuery(t, stub, "owner", index, test)
+		err = checkQuery(t, stub, "registrant", index, test)
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))
 		}
