@@ -37,21 +37,21 @@ For each kind of transaction, Invoke() does the following:
 #### createRegistrant
 In order to register IOT devices and specifications to the blockchain, a valid user (called a registrant) must first exist. createRegistrant accomplishes this.    
 
-<img src="https://github.com/InternetofTrustedThings/IOTRegistry/blob/master/images/createRegistrant.png" 
+<img src="https://github.com/Trusted-IoT-Alliance/IOTRegistry/blob/master/images/createRegistrant.png" 
 alt="main" border="10"/>
 
 createRegistrant does the following:
 1. Unmarshall arguments protobuf into createRegistrant struct type
 	createRegistrant struct looks like this:  
 
-<img src="https://github.com/InternetofTrustedThings/IOTRegistry/blob/master/images/createRegistrantTX.png" 
+<img src="https://github.com/Trusted-IoT-Alliance/IOTRegistry/blob/master/images/createRegistrantTX.png" 
 alt="main" border="10"/>
 2. Check that inputs exist for name, public key, and signature.
 3. Verify that the registrant to be created does not already exist
 4. Create what should be the message represented by the signature input as an argument
 5. Use public key and message to verify the signature
 6. marshall arguments into type createRegistrantStore, which looks like this:  
-<img src="https://github.com/InternetofTrustedThings/IOTRegistry/blob/master/images/createRegistrantStore.png" 
+<img src="https://github.com/Trusted-IoT-Alliance/IOTRegistry/blob/master/images/createRegistrantStore.png" 
 alt="main" border="10"/>  
 
 The createRegistrantStore struct holds the information that is committed to the blockchain through a call to 
@@ -67,7 +67,7 @@ Once a registrant has been created, IOT devices can be registered to the blockch
 For register thing, two kinds of states are put to the ledger. One kind is an "alias" state, which  is put for each member of the alias string slice input to an invocation of a register thing transaction. The other kind is a "thing" state, one of which kind is put to the ledger for each valid call to invoke  a register thing transaction. This allows for an owner of a thing to have multiple aliases.  
 
 registerThing stores information on the blockchain about a particular IOT device. The struct which represents the stored information on the blockchain looks like this:  
-<img src="https://github.com/InternetofTrustedThings/IOTRegistry/blob/master/images/registerThingStore.png" 
+<img src="https://github.com/Trusted-IoT-Alliance/IOTRegistry/blob/master/images/registerThingStore.png" 
 alt="main" border="10"/>  
 This struct has the following elements:
 1. A list of aliases of the registrant. This list of aliases allows for multiple registrants to be associated with a single IOT device.
@@ -77,7 +77,7 @@ This struct has the following elements:
 
 a registerThing transaction involves the following steps:
 1. unmarshal the collection of arguments into a struct of type RegisterThingTX, which looks like this:  
-<img src="https://github.com/InternetofTrustedThings/IOTRegistry/blob/master/images/registerThingTX.png" 
+<img src="https://github.com/Trusted-IoT-Alliance/IOTRegistry/blob/master/images/registerThingTX.png" 
 alt="main" border="10"/>  
 2. check that the arguments contain a public key, a nonce (which can be thought of as a random string of characters that serves as an identifier for the device), and a signature.
 3. Check that:  
@@ -86,7 +86,7 @@ alt="main" border="10"/>
 	c. whether any of the aliases supplied already exist as registrants on the ledger.
 4. Recreate the signed message and verify input signature with registrant public key
 5. Next, store relevant information on the ledger:  
-<img src="https://github.com/InternetofTrustedThings/IOTRegistry/blob/master/images/registerThingStates.png" 
+<img src="https://github.com/Trusted-IoT-Alliance/IOTRegistry/blob/master/images/registerThingStates.png" 
 alt="main" border="10"/>  
 5a. Put to the blockchain an alias for each member of registerThingArgs.Aliases (alternate public keys connected to the device)  
 5b. Put to the blockchain a thing with the information contained in the registerThingStoreType.
@@ -96,16 +96,16 @@ alt="main" border="10"/>
 
 An IOT device can have a specification that provides information about the device. In particular, the specification defines the schema which governs the data field of the struct representing the device. 
 
-<img src="https://github.com/InternetofTrustedThings/IOTRegistry/blob/master/images/registerSpec.png" 
+<img src="https://github.com/Trusted-IoT-Alliance/IOTRegistry/blob/master/images/registerSpec.png" 
 alt="main" border="10"/>  
 
 Registering a spec involves the following steps:
 1. unmarshall arguments into s registerSpecTX struct, which looks like this:
-<img src="https://github.com/InternetofTrustedThings/IOTRegistry/blob/master/images/registerSpecTX.png" 
+<img src="https://github.com/Trusted-IoT-Alliance/IOTRegistry/blob/master/images/registerSpecTX.png" 
 alt="main" border="10"/>  
 2. Verify that necessary arguments were input, that the spec does not already exist, and that the signature is valid.
 3. Marshal arguments into protobuf of type Spec, which looks like this:
-<img src="https://github.com/InternetofTrustedThings/IOTRegistry/blob/master/images/registerSpecStore.png" 
+<img src="https://github.com/Trusted-IoT-Alliance/IOTRegistry/blob/master/images/registerSpecStore.png" 
 alt="main" border="10"/>  
 
   

@@ -14,8 +14,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 
+	IOTRegistryTX "github.com/Trusted-IoT-Alliance/IOTRegistry/IOTRegistryTX"
 	"github.com/btcsuite/btcd/btcec"
-	IOTRegistryTX "github.com/InternetofTrustedThings/IOTRegistry/IOTRegistryTX"
 )
 
 /*
