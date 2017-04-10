@@ -203,17 +203,16 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 		}
 
 		//check if any Aliases exist
-		//we're checking if any Aliases are registered as RegistrantPubkeys but not if they are registered as aliases
 		for _, identity := range registerThingArgs.Aliases {
-			aliasCheckBytes, err := stub.GetState("RegistrantPubkey:" + identity)
+			aliasCheckBytes, err := stub.GetState("Alias:" + identity)
 			if err != nil {
 				fmt.Printf("Could not get identity: (%s) State\n", identity)
 				return nil, fmt.Errorf("Could not get identity: (%s) State\n", identity)
 			}
 			//throw error if any of the Aliases already exist
 			if len(aliasCheckBytes) != 0 {
-				fmt.Printf("RegistrantPubkey: (%s) is already in registry\n", identity)
-				return nil, fmt.Errorf("RegistrantPubkey: (%s) is already in registry\n", identity)
+				fmt.Printf("Alias: (%s) is already in registry\n", identity)
+				return nil, fmt.Errorf("Alias: (%s) is already in registry\n", identity)
 			}
 		}
 
@@ -404,23 +403,38 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 		if len(args) != 1 {
 			return nil, fmt.Errorf("No argument specified\n")
 		}
+		alias := IOTRegistryStore.Alias{}
+		thingAlias := args[0]
+		aliasBytes, err := stub.GetState("Alias:" + thingAlias)
+		if err != nil {
+			fmt.Printf(err.Error())
+			return nil, err
+		}
+
+		if len(aliasBytes) == 0 {
+			return nil, fmt.Errorf("Thing (%s) does not exist\n", thingAlias)
+		}
+
+		err = proto.Unmarshal(aliasBytes, &alias)
+
+		if err != nil {
+			fmt.Printf(err.Error())
+			return nil, err
+		}
+		thingNonce := hex.EncodeToString(alias.Nonce)
+
 		thing := IOTRegistryStore.Thing{}
-		thingNonce := args[0]
-		thingBytes, err := stub.GetState("Thing:" + thingNonce)
+		thingBytes, err := stub.GetState("Things:" + thingNonce)
 		if err != nil {
 			fmt.Printf(err.Error())
 			return nil, err
 		}
 
 		if len(thingBytes) == 0 {
-			return nil, fmt.Errorf("Thing (%s) does not exist\n", thingNonce)
+			return nil, fmt.Errorf("Thing (%s) does not exist\n", thingAlias)
 		}
-
 		err = proto.Unmarshal(thingBytes, &thing)
-		if err != nil {
-			fmt.Printf(err.Error())
-			return nil, err
-		}
+
 		return json.Marshal(thing)
 		/*
 			A "spec" query requests information stored in the ledger about a particular specification.
