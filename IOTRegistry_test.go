@@ -270,10 +270,10 @@ func checkQuery(t *testing.T, stub *shim.MockStub, function string, index string
 
 	bytes, err = stub.MockQuery(function, []string{index})
 	if err != nil {
-		return fmt.Errorf("Query (%s) failed\n", function)
+		return fmt.Errorf("Query (%s):%s failed\n", function, err.Error())
 	}
 	if bytes == nil {
-		return fmt.Errorf("Query (%s) failed to get value\n", function)
+		return fmt.Errorf("Query (%s):%s failed to get value\n", function, err.Error())
 	}
 
 	var jsonMap map[string]interface{}
@@ -380,12 +380,13 @@ func TestIOTRegistryChaincode(t *testing.T) {
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))
 		}
-
-		index = test.nonce
-		err = checkQuery(t, stub, "thing", index, test)
-		if err != nil {
-			HandleError(t, fmt.Errorf("%v\n", err))
+		for _, alias := range test.aliases {
+			err = checkQuery(t, stub, "thing", alias, test)
+			if err != nil {
+				HandleError(t, fmt.Errorf("%v\n", err))
+			}
 		}
+
 		err = registerSpec(t, stub, test.specName, test.pubKeyString, test.data, test.privateKeyString)
 		if err != nil {
 			HandleError(t, fmt.Errorf("%v\n", err))

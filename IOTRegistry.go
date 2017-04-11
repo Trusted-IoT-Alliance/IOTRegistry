@@ -105,6 +105,14 @@ func (t *IOTRegistry) Invoke(stub shim.ChaincodeStubInterface, function string, 
 			fmt.Printf("length of Pubkey (%s) is zero\n", registerNameArgs.RegistrantPubkey)
 			return nil, fmt.Errorf("length of Pubkey (%s) is zero\n", registerNameArgs.RegistrantPubkey)
 		}
+		//Validate and normalize key
+		registrantKey, err := btcec.ParsePubKey(registerNameArgs.RegistrantPubkey, btcec.S256())
+		if err != nil {
+			fmt.Printf("Public Key (%s) is invlaid\n", hex.EncodeToString(registerNameArgs.RegistrantPubkey))
+			return nil, fmt.Errorf("Public Key (%s) is invlaid\n", hex.EncodeToString(registerNameArgs.RegistrantPubkey))
+		}
+		registerNameArgs.RegistrantPubkey = registrantKey.SerializeCompressed()
+
 		if len(registerNameArgs.Signature) == 0 {
 			fmt.Printf("length of Signature (%s) is zero\n", registerNameArgs.Signature)
 			return nil, fmt.Errorf("length of Signature (%s) is zero\n", registerNameArgs.Signature)
@@ -424,7 +432,7 @@ func (t *IOTRegistry) Query(stub shim.ChaincodeStubInterface, function string, a
 		thingNonce := hex.EncodeToString(alias.Nonce)
 
 		thing := IOTRegistryStore.Thing{}
-		thingBytes, err := stub.GetState("Things:" + thingNonce)
+		thingBytes, err := stub.GetState("Thing:" + thingNonce)
 		if err != nil {
 			fmt.Printf(err.Error())
 			return nil, err
